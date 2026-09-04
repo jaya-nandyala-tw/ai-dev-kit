@@ -1,0 +1,12 @@
+{
+  "name": "git-cli-helper",
+  "description": "Expert assistant for the GitHub CLI (gh): manage PRs and issues, and debug GitHub Actions failures from run URLs.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Organization",
+    "email": "your-team@example.com"
+  },
+  "license": "Internal use only",
+  "keywords": ["git", "github", "gh-cli", "actions", "ci"],
+  "skills": ["./skills/"]
+}

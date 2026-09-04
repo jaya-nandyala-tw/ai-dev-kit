@@ -198,6 +198,84 @@ Evaluate whether mock or seed data needs adding for local development.
 
 Skip for pure refactors, style changes, or test-only stories.
 
+### Spike Plan Template
+
+Used when `@groom`'s Phase 0 classification is "Tech design / spike" — formalizes a `TICKET-SPIKE-*`
+naming convention. Save to `plans/active/TICKET-SPIKE-{short-name}.md`.
+
+```markdown
+# Spike: TICKET-SPIKE-XXXX — {Decision Title}
+
+> {One-line summary of the decision that needs resolving}
+
+## Decision Framing
+What question does this spike answer, and which future story or epic does it unblock?
+
+## Options Considered
+| Option | Pros | Cons |
+|---|---|---|
+| A. {option} | | |
+| B. {option} | | |
+
+## Recommendation
+{Which option, and why}
+
+## Open Questions
+- {anything still unresolved}
+
+## Unblocks
+- {story/epic ticket(s) waiting on this decision}
+
+## Status
+| Field | Value |
+|---|---|
+| Phase | planning / approved / in-progress / done |
+
+## Steering Log
+<!-- Append entries here whenever scope, decisions, or direction changes -->
+```
+
+If the spike sits under an existing epic (`plans/epics/{EPIC-KEY}.md` exists), link it into that
+epic's child-story table the same way a story would be.
+
+### Bug/Hotfix Plan Template
+
+Used when `@groom`'s Phase 0 classification is "Bug fix / hotfix." Save to
+`plans/active/BUG-{short-name}.md` or `plans/active/HOTFIX-{short-name}.md`. Deliberately lightweight
+— but **still mandatory**, even on the fast path where shared infra isn't touched and Interrogation is
+skipped: no path should let code get written with zero durable artifact.
+
+```markdown
+# Bug/Hotfix: BUG-XXXX — {One-line description}
+
+> {Urgent hotfix or standard bug ticket}
+
+## Extends / Epic
+{ticket, epic key, or "none" — only set if this bug touches an existing feature/epic}
+
+## Acceptance Criteria
+| # | Criterion | Sensor Command |
+|---|---|---|
+| 1 | Regression test proves the fix | `{test command}` |
+
+## Git
+- Branch: `BUG-XXXX-{short-title}` / `HOTFIX-XXXX-{short-title}`
+- Commit prefix: `BUG-XXXX |` / `HOTFIX-XXXX |`
+
+## Status
+| Field | Value |
+|---|---|
+| Phase | planning / approved / in-progress / review / closing / done |
+
+## Pending Approval
+| # | Repo | Commit | Files |
+|---|---|---|---|
+| 1 | {Repo} | `BUG-XXXX \| {description}` | {file1} |
+
+## Steering Log
+<!-- Append entries here whenever scope, decisions, or direction changes -->
+```
+
 ## Rules
 - **Redact sensitive information** — never include API keys, passwords, tokens, connection strings, or PII in plan files. Use `[REDACTED]` or environment variable references
 - **Reference, don't repeat** — link to existing specs/constitutions by path rather than copying their content into the plan

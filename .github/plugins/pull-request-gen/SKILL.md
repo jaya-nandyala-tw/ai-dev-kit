@@ -24,8 +24,7 @@ create the pull request and add the description.
 You can use `./references/documentation.txt` to understand how to use this command.
 
 #### Branch naming examples
-`<initials>/<ticket-id>` e.g. `jd/PROJ-19967`
-`<initials>/<random-text>-<ticket-id>` e.g. `jd/fix-PROJ-19967`
+`TICKET-XXXX-{short-title}` e.g. `PROJ-19967-fix-login-bug`
 
 #### Pull request title examples
 `"[READY] - [${ticket-id}] - ${title}"` e.g. `[READY] - [PROJ-20028] - My Awesome pull request`
