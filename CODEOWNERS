@@ -1,0 +1,8 @@
+# CODEOWNERS TEMPLATE — fill in with your team's real GitHub handles/groups before relying on this.
+# Rules are evaluated in order; the last matching rule wins.
+#
+# Example:
+# *                        @your-org/platform-maintainers
+# /.github/agents/         @your-org/platform-maintainers
+# /.github/instructions/   @your-org/platform-maintainers
+# /scripts/                @your-org/platform-maintainers

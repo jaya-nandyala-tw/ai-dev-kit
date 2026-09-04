@@ -1,0 +1,13 @@
+{
+  "name": "story-mode-review-gate",
+  "description": "Enforce human review gate before any git commit in story mode",
+  "triggers": ["PreToolUse"],
+  "conditions": {
+    "toolName": "run_in_terminal",
+    "args": {
+      "command": ".*git commit.*"
+    }
+  },
+  "action": "block",
+  "message": "🛑 Review Gate: Story Mode Commits Require Approval\n\nBefore committing changes, please review:\n1. ✓ All changes match the planned tasks from the story plan\n2. ✓ Code quality and tests pass\n3. ✓ Commit message follows convention (e.g. READY/TICKET-XXXX format)\n4. ✓ No unintended files are staged\n\nTo proceed with commit, reply: 'approve commit' or provide any corrections needed.\n\nNOTE (starter kit): this JSON documents the intended hook shape. Whether your agent runtime actually loads and enforces a file like this depends on the runtime — see STORY_MODE_REVIEW_GATE.md before assuming this is wired up."
+}

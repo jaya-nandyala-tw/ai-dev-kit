@@ -1,0 +1,15 @@
+# Talisman secret-scanning config — https://github.com/thoughtworks/talisman
+#
+# This is a fresh, minimal config. The repo this starter kit was extracted
+# from had `fileignoreconfig` entries with content checksums — those
+# checksums are tied to that repo's exact file bytes and are meaningless
+# here, so they were NOT copied over.
+#
+# To ignore a specific file/pattern with a checksum (so future edits to it
+# still get scanned unless the checksum is regenerated), run:
+#   talisman -i
+# This detects your staged changes and appends the right entry below
+# interactively. Do not hand-write checksums.
+threshold: medium
+fileignoreconfig: []
+version: "1.0"

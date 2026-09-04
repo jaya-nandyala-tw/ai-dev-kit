@@ -1,0 +1,12 @@
+{
+  "name": "address-pr-comments",
+  "description": "Triage and address PR review comments. Categorizes comments into 'Should Fix' vs 'Should Clarify with Reply' based on project constitutions, then generates a TODO list with fixes or reply drafts.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Organization",
+    "email": "your-team@example.com"
+  },
+  "license": "Internal use only",
+  "keywords": ["pull-request", "code-review", "triage"],
+  "skills": ["./skills/"]
+}

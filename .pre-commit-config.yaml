@@ -1,0 +1,53 @@
+# Pre-commit hooks — safety net for both agents and humans.
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+# Skip (emergency): git commit --no-verify
+#
+# GENERICIZED TEMPLATE — the `files:` globs below are placeholders pointing at
+# `codebase/<service>/...` paths. Once you've cloned your own repos into
+# `codebase/`, replace every `<service>`, `<lambdas-or-workers>`, and
+# `<iac-repo-prefix>` placeholder with your own actual directory names so
+# these hooks actually match files. The four hook groups themselves (Python
+# lint, TS typecheck, Terraform fmt/validate, general hygiene) are a
+# reasonable generic starting set — add/remove hooks to match your stack.
+
+repos:
+  # ── Python linting (service + workers) ──────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^codebase/(<service>/service|<lambdas-or-workers>)/
+      - id: ruff-format
+        files: ^codebase/(<service>/service|<lambdas-or-workers>)/
+
+  # ── TypeScript typecheck ────────────────────────────
+  - repo: local
+    hooks:
+      - id: tsc-check
+        name: TypeScript typecheck
+        entry: bash -c 'cd codebase/<service>/ui && npx tsc --noEmit'
+        language: system
+        files: ^codebase/<service>/ui/src/.*\.(ts|tsx)$
+        pass_filenames: false
+
+  # ── Terraform ───────────────────────────────────────
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.3
+    hooks:
+      - id: terraform_fmt
+        files: ^codebase/<iac-repo-prefix>
+      - id: terraform_validate
+        files: ^codebase/<iac-repo-prefix>
+
+  # ── General hygiene ─────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, master]

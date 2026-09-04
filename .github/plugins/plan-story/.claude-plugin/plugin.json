@@ -1,0 +1,12 @@
+{
+  "name": "plan-story",
+  "description": "Generate a per-repo implementation plan from a ticket or feature request. Use when starting a new story, breaking down a feature into tasks, or creating a technical plan for a ticket.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Organization",
+    "email": "your-team@example.com"
+  },
+  "license": "Internal use only",
+  "keywords": ["planning", "implementation-plan"],
+  "skills": ["./skills/"]
+}
