@@ -41,3 +41,6 @@ Thumbs.db
 # Logs
 *.log
 logs.txt
+
+# Scratch space — personal drafts, recording scripts, etc. Never committed.
+playground/
