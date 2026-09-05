@@ -1,14 +1,13 @@
 # AI Starter Kit
 
-> Internal use — REDACTED Org.
 > **9 agents · 9 skills · 11 plugins · 3 prompts · 1 commit/PR review gate** — portal-agnostic, adopt into your own repo.
 
 A shared, portal-agnostic agentic-engineering harness and dev-tooling starter kit. Clone or fork this
-repo to bootstrap a new Org workstream repo with the same AI coding agent conventions, guardrails, and
-local dev tooling used elsewhere in Org — without inheriting any one product's specific paths, repo
-names, or business logic.
+repo to bootstrap a new workstream repo with the same AI coding agent conventions, guardrails, and
+local dev tooling used across your other repos — without inheriting any one product's specific paths,
+repo names, or business logic.
 
-This kit was extracted from an existing Org product repo by generalizing everything that was reusable
+This kit was extracted from an existing production repo by generalizing everything that was reusable
 and dropping everything that was specific to that product. Wherever a piece of content needed a real
 path, repo name, or ticket format to be useful, it ships here as a clearly marked placeholder for you
 to fill in.

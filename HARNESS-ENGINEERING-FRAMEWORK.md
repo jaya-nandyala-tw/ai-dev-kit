@@ -1,10 +1,10 @@
 # Harness Engineering Framework v1.0
 
-Repo: https://github.com/jaya-nandyala-tw/ai-dev-kit
+Repo: `<this-repo-url>` — fill in your own fork/clone's URL once you've adopted this kit.
 
 ## What this is
 
-A shared starter kit that gives every Org workstream repo the same AI coding agent setup — named
+A shared starter kit that gives every workstream repo the same AI coding agent setup — named
 agents, on-demand skills, a commit/PR review gate, and local dev tooling — instead of each team
 reinventing it. **Agent = Model + Harness**: the model provides intelligence, the harness (prompts,
 tools, feedback loops, guardrails) is what makes it reliable in *your* codebase instead of producing
@@ -32,7 +32,7 @@ generic output.
 
 ## Getting started
 
-1. Clone the [starter kit repo](https://github.com/jaya-nandyala-tw/ai-dev-kit) as the base for your new workstream repo.
+1. Clone the starter kit repo (`<this-repo-url>`) as the base for your new workstream repo.
 2. Open it in an agent-capable editor and ask it what agents/skills it defines — no setup required
    to try this.
 3. Follow the repo's onboarding guide for one-time environment setup.

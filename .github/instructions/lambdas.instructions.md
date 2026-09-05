@@ -7,7 +7,7 @@ description: "Serverless function ecosystem rules — shared layer, handler/proc
 
 <!--
   STARTER KIT TEMPLATE — written for a Python/AWS Lambda ecosystem with a shared layer, since that's
-  a common Org shape. If your stack differs (different cloud, different runtime, no shared layer),
+  a common shape for this kind of worker/lambda tier. If your stack differs (different cloud, different runtime, no shared layer),
   keep the *principles* section and rewrite the Key Rules for your actual tooling.
 -->
 

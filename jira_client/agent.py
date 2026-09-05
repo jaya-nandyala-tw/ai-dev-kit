@@ -182,7 +182,7 @@ _STATUS_MAP = {
 
 def _handle_my_issues(client: JiraClient, raw: str) -> None:
     project_m = _PROJECT_RE.search(raw)
-    # Fall back to the workspace default project (PROJ) when not specified
+    # Fall back to the workspace default project when not specified
     project = project_m.group(1).upper() if project_m else _DEFAULT_PROJECT
 
     status_m = _STATUS_WORDS_RE.search(raw)
