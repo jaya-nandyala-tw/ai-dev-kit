@@ -60,6 +60,7 @@ guardrails in other agent harnesses:
 ├── hooks/         the commit/PR review gate spec — see Guardrails above
 └── instructions/  always-on + path-scoped rules agents load automatically
 scripts/           AWS/Okta auth, multi-repo clone/pull, workspace toggling, local debug helpers
+config/            repos.json — single source of truth for which repos this harness manages
 jira_client/       reusable Jira Cloud API client + NL CLI agent
 memories/          convention for durable repo indexes + ephemeral per-story checkpoints
 profiles/          example local-dev environment profiles
@@ -83,6 +84,7 @@ as a reference implementation of that pattern, not a required format.
 | `.github/hooks/` | The story-mode commit review gate — a spec for a pre-commit approval surface, plus an honest explanation of what actually enforces it in your agent runtime. |
 | `.github/instructions/` | Always-on and path-scoped rules (`applyTo` patterns) agents load automatically: global conventions, IaC conventions, worker/lambda conventions, the review-gate rule. |
 | `scripts/` | Generic dev-tooling: AWS/Okta auth, multi-repo clone/pull, VS Code workspace folder toggling, local lambda/worker debug and invoke helpers, a mock IdP + dev-login bypass for local auth, profile switching. |
+| `config/repos.json` | Single source of truth for which repos this harness clones/pulls/shows in the workspace — edit by hand or populate via `./scripts/clone-repos.sh --select` (GitHub CLI-backed multi-select). |
 | `jira_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs, with a natural-language CLI agent. |
 | `memories/` | The convention (not the content) for durable per-repo indexes (`memories/repo/`) and ephemeral per-story checkpoints (`memories/session/`) that agents read/write. |
 | `profiles/` | Example local-dev environment profiles (`fullstack`, `backend`, `frontend`, `lambda`, `integration`, `aws-login`) switched via `scripts/profile.sh`. |
@@ -109,8 +111,10 @@ excluded outright rather than half-genericized.
      hook's `files:` pattern with your own repo layout.
    - `.talismanrc` — run `talisman -i` once you have real files to ignore; don't hand-write checksums.
    - `CODEOWNERS` — fill in your team's real GitHub handles/groups.
-   - `scripts/clone-repos.sh`, `scripts/pull-all.sh`, `scripts/workspace.py` — fill in your own GitHub
-     org and repo/worker lists.
+   - `config/repos.json` — fill in your own GitHub org and repo list (by hand, or run
+     `./scripts/clone-repos.sh --select --org <your-org>` to populate it via the GitHub CLI). This
+     single file drives `clone-repos.sh`, `pull-all.sh`, and `workspace.py` — no need to edit those
+     scripts directly.
    - `jira_client/fetch_my_stories.py` / `fetch_sprint_stories.py` — fill in your own board ID/project
      key, or delete them if you don't use Jira boards this way.
    - `.github/workflows/ci.yml` — replace the placeholder steps with your real lint/test commands.

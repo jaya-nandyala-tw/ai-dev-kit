@@ -28,6 +28,7 @@ This repo is a **Context Engineering framework** that supercharges AI-assisted d
 | Container runtime (Docker Desktop / Colima / Podman) | See [System Dependencies → Container Runtime](#container-runtime) |
 | Node.js / Python / whatever your stack needs | Fill in your own versions |
 | AWS CLI + your SSO auth CLI (if applicable) | `brew install awscli okta-awscli` |
+| GitHub CLI (`gh`) — optional, only for `./scripts/clone-repos.sh --select` | `brew install gh` then `gh auth login` |
 
 ---
 
@@ -156,11 +157,65 @@ This activates automatic lint/typecheck/security checks before every commit. Hoo
 
 ### Step 4: Clone Code Repos
 
+First, tell the harness which repos exist. Everything — cloning, daily pulls, and what shows up in
+the VS Code workspace — reads from **one file**: `config/repos.json`. You never need to touch
+`scripts/clone-repos.sh`, `scripts/pull-all.sh`, or `scripts/workspace.py` themselves.
+
+**Option A — populate it via GitHub CLI (recommended):**
+
 ```bash
-./scripts/clone-repos.sh
+./scripts/clone-repos.sh --select --org <your-github-org>
 ```
 
-See the script's own `--all` / `--core-only` options — fill in your own repo groups in the script first (see comments in `scripts/clone-repos.sh`).
+This uses [`gh`](https://cli.github.com/) (install it, then `gh auth login`, if you haven't) to list
+every repo in your org, lets you multi-select the ones you want (comma-separated numbers, ranges
+like `1,3,5-8`, or `all`), asks whether each is a core service or a worker/lambda repo, and writes
+the result into `config/repos.json`. It then goes straight into cloning them.
+
+You can also pull from a GitHub Project (v2) board instead of a whole org:
+```bash
+./scripts/clone-repos.sh --select --project 12 --owner <your-github-org>
+```
+
+**Option B — edit `config/repos.json` by hand.** It's plain JSON — no script required:
+
+```json
+{
+  "github": { "org": "your-github-org", "protocol": "ssh" },
+  "groups": { "messaging": "Notification and messaging workers" },
+  "repos": [
+    { "name": "billing-service", "tier": "core" },
+    { "name": "notifications-worker", "tier": "worker", "group": "messaging" }
+  ]
+}
+```
+
+- `tier: "core"` → always cloned, into `codebase/<name>`, and always visible in the VS Code workspace.
+- `tier: "worker"` → cloned into `codebase/workers/<name>` unless `--core-only` is passed; grouped
+  under `groups` for the workspace visibility toggle (see below).
+
+Either way you end up with a filled-in `config/repos.json`. Then clone:
+
+```bash
+./scripts/clone-repos.sh              # interactive: core-only, or core + workers
+./scripts/clone-repos.sh --all        # clone everything listed
+./scripts/clone-repos.sh --core-only  # clone only tier:"core" repos
+```
+
+**Adding one more repo later:** re-run `./scripts/clone-repos.sh --select --org <org>` and pick just
+the new one (it merges into the existing file, it doesn't replace it), or add one more object to the
+`repos` array by hand, then run `./scripts/clone-repos.sh` again.
+
+**Removing a repo:** delete its entry from `config/repos.json`. It won't be re-cloned or pulled; the
+folder on disk is left alone (delete `codebase/<name>` yourself if you want it gone entirely).
+
+**The three things `config/repos.json` drives, concretely:**
+
+| Concern | Script | Behavior |
+|---|---|---|
+| What gets cloned | `clone-repos.sh` | Every `tier:"core"` repo, plus `tier:"worker"` repos unless `--core-only` |
+| What gets kept up to date | `pull-all.sh` | Every repo listed, at its `codebase/<name>` or `codebase/workers/<name>` path |
+| What's visible in VS Code | `workspace.py` (via `workspace.sh`) | Core repos always; worker repos toggled per `group` — `./scripts/workspace.sh group messaging`, `core`, or `reset` |
 
 ### Step 5: Open the Workspace
 
@@ -299,7 +354,7 @@ Control which repos are visible in VS Code (only useful once you have several wo
 ./scripts/workspace.sh reset                  # Show everything
 ```
 
-Fill in your own groups in `scripts/workspace.py`'s `WORKER_GROUPS`.
+Groups come from the `groups` map in `config/repos.json` — see Step 4 above to add or rename one.
 
 ---
 

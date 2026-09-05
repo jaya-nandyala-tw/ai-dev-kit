@@ -9,42 +9,33 @@ Usage:
   ./workspace.sh group <name>        # Show a specific worker domain group
   ./workspace.sh add <partial-name>  # Add a worker matching partial name
 
-GENERICIZED TEMPLATE — this is useful once your workspace has enough
-worker/lambda repos under codebase/workers/ that having them all open in
-VS Code at once gets noisy. Fill in:
-  - WORKER_GROUPS with your own domain groupings of worker repo names.
-  - BASE_FOLDERS / CORE_FOLDERS with your own always-visible repo paths.
-If you don't have a worker/lambda tier, delete this script — it has
-nothing to do once WORKER_GROUPS is empty.
+Groups and folders are read from config/repos.json (via repo_config.py) — the
+same source of truth clone-repos.sh and pull-all.sh use. Edit config/repos.json
+(by hand or via ./scripts/clone-repos.sh --select) to change what shows up here;
+nothing in this file needs editing.
 """
 
 import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import repo_config
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 WORKSPACE_FILE = ROOT_DIR / "ai-workspace.code-workspace"
 WORKERS_DIR = ROOT_DIR / "codebase" / "workers"
 
-# ── Worker domain groups — fill in your own ──
-WORKER_GROUPS = {
-    "example-group": {
-        "desc": "Example domain group — replace with your own",
-        "workers": [
-            "<worker-repo-1>",
-            "<worker-repo-2>",
-        ],
-    },
-}
+# ── Worker domain groups — sourced from config/repos.json's "groups"/"repos" ──
+WORKER_GROUPS = repo_config.groups()
 
 GROUP_ORDER = list(WORKER_GROUPS.keys())
 
-# ── Base workspace folders (always present) — fill in your own ──
+# ── Base workspace folders (always present) — core-tier repos from config/repos.json ──
 BASE_FOLDERS = [
     {"name": "── AI Context ───", "path": "."},
     {"name": "📋 Specs", "path": "specs"},
-    {"name": "<service-name>", "path": "codebase/<service-name>"},
-]
+] + [{"name": name, "path": f"codebase/{name}"} for name in repo_config.core_repos()]
 
 WORKER_FOLDER = {"name": "Workers", "path": "codebase/workers"}
 

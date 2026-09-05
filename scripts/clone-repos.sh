@@ -2,32 +2,63 @@
 set -euo pipefail
 
 # ============================================
-# Repo setup — clones all code repos for this workspace
+# Repo setup — clones repos listed in config/repos.json
 # ============================================
 # Usage:
-#   ./clone-repos.sh           # Interactive picker
-#   ./clone-repos.sh --all     # Clone everything
+#   ./clone-repos.sh              # Interactive picker (core / core+workers)
+#   ./clone-repos.sh --all        # Clone everything in config/repos.json
+#   ./clone-repos.sh --core-only  # Clone only tier:"core" repos
+#   ./clone-repos.sh --select     # Discover repos via GitHub CLI first, then clone
+#                                  #   (everything after --select forwards to select-repos.sh,
+#                                  #    e.g. --select --org my-org; cloning then prompts as usual)
 #
 # Prerequisites:
-#   - SSH key configured for GitHub
-#   - git installed
+#   - SSH key configured for GitHub (or HTTPS access)
+#   - git and python3 installed
+#   - config/repos.json filled in — edit it by hand, or run `./clone-repos.sh --select`
+#     to populate it via the GitHub CLI. See ONBOARDING.md § Adding Other Repos to This Harness.
 #
-# Repos are cloned into codebase/ and are gitignored — only speckits and
-# AI context are tracked in this repo.
-#
-# GENERICIZED TEMPLATE — fill in your own GitHub org and repo lists below.
-# The mechanism (protocol detection, clone-or-pull-latest, scoped groups)
-# is reusable regardless of how many repos or groups you have.
+# Repos are cloned into codebase/ and are gitignored — only speckits and AI context are
+# tracked in this repo. config/repos.json IS tracked: it's the one file to edit to change
+# what gets cloned, pulled, and shown in the VS Code workspace.
 # ============================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CODEBASE="$ROOT_DIR/codebase"
+CONFIG_HELPER="$SCRIPT_DIR/repo_config.py"
 mkdir -p "$CODEBASE"
 
-# ── GitHub org — fill in your own ──
-SSH_ORG="git@github.com:<your-github-org>"
-HTTPS_ORG="https://github.com/<your-github-org>"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "✗ python3 is required (used to read config/repos.json)." >&2
+  exit 1
+fi
+
+if [[ "${1:-}" == "--select" ]]; then
+  shift
+  "$SCRIPT_DIR/select-repos.sh" "$@"
+  echo ""
+  set --   # scope-selection prompt below still applies; don't forward --select's own args
+fi
+
+ORG_NAME="$(python3 "$CONFIG_HELPER" org)"
+if [[ -z "$ORG_NAME" || "$ORG_NAME" == "<your-github-org>" ]]; then
+  echo "✗ config/repos.json has no github.org set (or it's still the placeholder)." >&2
+  echo "  Edit config/repos.json by hand, or run: ./scripts/clone-repos.sh --select" >&2
+  exit 1
+fi
+
+CORE_REPOS="$(python3 "$CONFIG_HELPER" core-repos)"
+WORKER_REPOS="$(python3 "$CONFIG_HELPER" worker-repos)"
+
+if [[ -z "$CORE_REPOS" && -z "$WORKER_REPOS" ]]; then
+  echo "✗ config/repos.json has no repos listed yet." >&2
+  echo "  Edit config/repos.json by hand, or run: ./scripts/clone-repos.sh --select" >&2
+  exit 1
+fi
+
+SSH_ORG="git@github.com:${ORG_NAME}"
+HTTPS_ORG="https://github.com/${ORG_NAME}"
 
 # ── Protocol detection ──
 detect_git_protocol() {
@@ -55,17 +86,6 @@ detect_git_protocol() {
 }
 
 ORG="$SSH_ORG"
-
-# ── Repo groups — fill in your own service/repo names ──
-# CORE_REPOS clone directly into codebase/<repo>.
-CORE_REPOS="<service-name> <another-service-name>"
-
-# WORKER_REPOS clone into codebase/workers/<repo> — delete this group entirely
-# if your workspace is a single repo or doesn't have a worker/lambda tier.
-WORKER_REPOS="
-<worker-repo-1>
-<worker-repo-2>
-"
 
 echo "── Repo setup ──"
 echo ""
@@ -119,17 +139,17 @@ clone_repo() {
 }
 
 echo "── Core services ──"
-for repo in $CORE_REPOS; do
+while IFS= read -r repo; do
   clone_repo "$repo" "$CODEBASE"
-done
+done <<< "$CORE_REPOS"
 
 if [[ "$CLONE_WORKERS" == "true" ]]; then
   echo ""
   echo "── Workers ──"
   mkdir -p "$CODEBASE/workers"
-  for repo in $WORKER_REPOS; do
+  while IFS= read -r repo; do
     clone_repo "$repo" "$CODEBASE/workers"
-  done
+  done <<< "$WORKER_REPOS"
 fi
 
 echo ""

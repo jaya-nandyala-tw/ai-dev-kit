@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# GENERICIZED TEMPLATE — replace REPOS below with your own workspace's repo
-# list, or auto-discover every git repo under codebase/ (see the commented
-# alternative). This script's job is just "git pull --ff-only across the
-# whole multi-repo workspace and report pass/fail per repo."
+# Pulls latest for every repo listed in config/repos.json — the same single
+# source of truth clone-repos.sh and workspace.py read. Edit config/repos.json
+# (by hand or via ./scripts/clone-repos.sh --select) to change what this pulls.
 
 WORKSPACE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Option A — explicit list (fill in your own):
-REPOS=(
-  codebase/<service-name>
-  codebase/<another-service-name>
-)
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "✗ python3 is required (used to read config/repos.json)." >&2
+  exit 1
+fi
 
-# Option B — auto-discover every git repo under codebase/ instead:
-# REPOS=()
-# while IFS= read -r -d '' d; do
-#   REPOS+=("${d#"$WORKSPACE_ROOT/"}")
-# done < <(find "$WORKSPACE_ROOT/codebase" -maxdepth 3 -name .git -type d -print0 | xargs -0 -n1 dirname -z 2>/dev/null)
+REPOS=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] && REPOS+=("$line")
+done < <(python3 "$WORKSPACE_ROOT/scripts/repo_config.py" all-paths)
+
+if [[ ${#REPOS[@]} -eq 0 ]]; then
+  echo "No repos listed in config/repos.json yet — nothing to pull."
+  exit 0
+fi
 
 PASSED=0
 FAILED=0

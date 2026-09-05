@@ -1,0 +1,16 @@
+{
+  "_comment": "GENERICIZED TEMPLATE — single source of truth for scripts/clone-repos.sh, scripts/pull-all.sh, and scripts/workspace.py. Edit this file by hand, or run ./scripts/clone-repos.sh --select to populate it via the GitHub CLI. See ONBOARDING.md § Adding Other Repos to This Harness.",
+  "github": {
+    "org": "<your-github-org>",
+    "protocol": "ssh"
+  },
+  "groups": {
+    "example-group": "Example domain group — replace with your own"
+  },
+  "repos": [
+    { "name": "<service-name>", "tier": "core" },
+    { "name": "<another-service-name>", "tier": "core" },
+    { "name": "<worker-repo-1>", "tier": "worker", "group": "example-group" },
+    { "name": "<worker-repo-2>", "tier": "worker", "group": "example-group" }
+  ]
+}
