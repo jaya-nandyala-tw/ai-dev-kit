@@ -103,12 +103,6 @@ function preCommitConfig(): StepStatusEntry {
   return { id: "pre-commit-config", status: !current || stillPlaceholder ? "not-started" : "done" };
 }
 
-function ciWorkflow(): StepStatusEntry {
-  const current = read(".github/workflows/ci.yml");
-  const stillTodo = current.includes('echo "TODO: wire up your linter') || current.includes('echo "TODO: wire up your test');
-  return { id: "ci-workflow", status: !current || stillTodo ? "not-started" : "done" };
-}
-
 function sensorTable(): StepStatusEntry {
   const current = read(".github/instructions/global.instructions.md");
   const stillPlaceholder = current.includes("<service>/src/**/*.py");
@@ -143,7 +137,6 @@ export function computeAllStatuses(): { state: OnboardingState; statuses: Record
     preCommitHooks(),
     codeowners(),
     preCommitConfig(),
-    ciWorkflow(),
     sensorTable(),
     talisman(),
     jira(state),

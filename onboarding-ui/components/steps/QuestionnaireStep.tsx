@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { saveProfile } from "@/lib/apiClient";
-import { Button } from "@/components/ui/Button";
-import { toast } from "@/lib/toast";
-import { getAdjacentStepIds } from "@/lib/stepDefs";
 import type { ProfileAnswers } from "@/types";
 
 const QUESTIONS: Array<{ key: keyof ProfileAnswers; icon: string; label: string; help?: string }> = [
@@ -27,26 +23,18 @@ export function QuestionnaireStep({
   initial: ProfileAnswers | null;
   onSaved: () => void;
 }) {
-  const router = useRouter();
   const [answers, setAnswers] = useState<ProfileAnswers>(initial ?? EMPTY_ANSWERS);
-  const [saving, setSaving] = useState(false);
+  const [savingKey, setSavingKey] = useState<keyof ProfileAnswers | null>(null);
 
-  async function save() {
-    setSaving(true);
-    await saveProfile(answers);
-    setSaving(false);
-    toast.success("Stack profile saved.");
+  // No separate Save action — every toggle persists immediately, so the page-level Continue
+  // button (app/steps/[stepId]/page.tsx) can just navigate; there's never unsaved state to lose.
+  async function toggle(key: keyof ProfileAnswers) {
+    const next = { ...answers, [key]: !answers[key] };
+    setAnswers(next);
+    setSavingKey(key);
+    await saveProfile(next);
+    setSavingKey(null);
     onSaved();
-  }
-
-  async function saveAndContinue() {
-    setSaving(true);
-    await saveProfile(answers);
-    setSaving(false);
-    toast.success("Stack profile saved — the rest of the flow now matches your answers.");
-    onSaved();
-    const { next } = getAdjacentStepIds("stack-profile", answers);
-    router.push(next ? `/steps/${next.id}` : "/recommendations");
   }
 
   return (
@@ -58,42 +46,39 @@ export function QuestionnaireStep({
             <button
               key={q.key}
               type="button"
-              onClick={() => setAnswers((prev) => ({ ...prev, [q.key]: !prev[q.key] }))}
+              onClick={() => toggle(q.key)}
               className="text-left panel-flat card-interactive p-4 flex flex-col gap-2.5 anim-fade-in-up"
               style={checked ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : undefined}
             >
               <span className="flex items-start justify-between">
                 <span
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base"
-                  style={{ background: checked ? "var(--accent-soft)" : "var(--bg-elevated)" }}
+                  className="w-9 h-9 border flex items-center justify-center shrink-0 text-base"
+                  style={{ background: checked ? "var(--accent-soft)" : "var(--bg-elevated)", borderColor: "var(--border-soft)" }}
                 >
                   {q.icon}
                 </span>
                 <span
-                  className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all"
+                  className="w-5 h-5 border flex items-center justify-center shrink-0 transition-all"
                   style={{
                     borderColor: checked ? "var(--accent)" : "var(--border)",
                     background: checked ? "var(--accent)" : "transparent",
-                    color: "white",
+                    color: "var(--bg)",
                   }}
                 >
-                  {checked && <span className="text-xs anim-pop">✓</span>}
+                  {savingKey === q.key ? (
+                    <span className="spinner" style={{ width: "0.65em", height: "0.65em" }} />
+                  ) : (
+                    checked && <span className="text-xs anim-pop">✓</span>
+                  )}
                 </span>
               </span>
-              <span className="text-sm">{q.label}</span>
+              <span className="text-sm font-medium">{q.label}</span>
               {q.help && <span className="text-xs text-[var(--muted-soft)]">{q.help}</span>}
             </button>
           );
         })}
       </div>
-      <div className="flex gap-2 pt-1">
-        <Button variant="secondary" onClick={save} loading={saving}>
-          Save
-        </Button>
-        <Button variant="primary" onClick={saveAndContinue} loading={saving}>
-          Save & continue →
-        </Button>
-      </div>
+      <p className="mono text-xs text-[var(--muted-soft)]">Saved automatically — use Continue below when you're ready.</p>
     </div>
   );
 }

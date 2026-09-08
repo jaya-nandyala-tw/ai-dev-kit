@@ -1,4 +1,4 @@
-// Shared types for the onboarding dashboard. Kept in one file since the whole app is small.
+// Shared types for the onboarding wizard. Kept in one file since the whole app is small.
 
 export type ProfileAnswers = {
   hasWorkers: boolean;

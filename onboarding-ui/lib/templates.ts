@@ -69,46 +69,6 @@ repos:
         args: [--branch, main, --branch, master]
 `;
 
-export const CI_WORKFLOW_BASELINE = `name: CI
-
-# STARTER KIT TEMPLATE — this repo ships no application code, so the steps below are placeholders.
-# Replace them with your actual lint/test commands once you fork this kit for a real project.
-
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.12"
-      # - run: pip install -r requirements.txt
-      # - run: ruff check .
-      - run: echo "TODO: wire up your linter(s) here"
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: "20"
-      # - run: npm ci && npm test
-      - run: echo "TODO: wire up your test runner(s) here"
-
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
-`;
-
 // Only the anchored block matters for diffing/regeneration; the rest of global.instructions.md
 // is prose the wizard never touches. Kept here in full so `customized` detection still works if
 // someone edited prose above/below the anchors.

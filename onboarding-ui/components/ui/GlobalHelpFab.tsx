@@ -1,34 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { HelpDrawer, HelpList, HelpSection } from "@/components/ui/HelpDrawer";
-import { GLOBAL_HELP } from "@/lib/helpContent";
+import { useGlobalHelp } from "@/components/ui/HelpProvider";
 
+// A true circular FAB, bottom-right, on every page — the one deliberate exception to the
+// all-sharp system, same category as the terminal's round traffic-light dots: a floating
+// action button reads as one because it's round, in the conventional corner. Opens the same
+// dialog instance as the navbar's Help link (see HelpProvider).
 export function GlobalHelpFab() {
-  const [open, setOpen] = useState(false);
+  const openHelp = useGlobalHelp();
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Help — how this works"
-        className="fixed bottom-4 left-4 z-40 w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold shadow-lg transition-transform hover:scale-105"
-        style={{
-          background: "linear-gradient(180deg, var(--accent-strong), var(--accent))",
-          color: "white",
-          boxShadow: "0 6px 20px -4px rgba(91,140,255,0.55)",
-        }}
-        title="Help / How this works?"
-      >
-        ?
-      </button>
-      <HelpDrawer open={open} onClose={() => setOpen(false)} title="How this works" icon="🛟">
-        {GLOBAL_HELP.sections.map((section) => (
-          <HelpSection key={section.title} title={section.title}>
-            <HelpList items={section.body} />
-          </HelpSection>
-        ))}
-      </HelpDrawer>
-    </>
+    <button
+      onClick={openHelp}
+      aria-label="Help — how this works"
+      className="help-fab fixed bottom-6 right-6 z-40"
+      style={{ boxShadow: "0 8px 24px -4px color-mix(in srgb, var(--accent) 45%, transparent)" }}
+      title="Help / How this works?"
+    >
+      <span className="mono">?</span>
+    </button>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardShell } from "@/components/DashboardShell";
+import Link from "next/link";
+import { WizardShell } from "@/components/WizardShell";
+import { Button } from "@/components/ui/Button";
 import { fetchRecommendations } from "@/lib/apiClient";
 import { RunStep } from "@/components/steps/RunStep";
 import type { RecommendationItem } from "@/types";
@@ -28,11 +30,17 @@ export default function RecommendationsPage() {
   const allNotNeededPaths = notNeeded.flatMap((i) => i.paths);
 
   return (
-    <DashboardShell>
+    <WizardShell>
       {({ profile }) => (
-        <div className="space-y-5 anim-fade-in-up">
+        <div className="max-w-4xl mx-auto space-y-5 anim-fade-in-up">
+          <Link href="/">
+            <Button variant="ghost" size="sm" icon={<span>←</span>}>
+              Home
+            </Button>
+          </Link>
+
           <div className="panel-flat p-5">
-            <h1 className="text-lg font-semibold mb-1 flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
               <span>🧹</span> Recommended Resources
             </h1>
             <p className="text-sm text-[var(--muted)]">
@@ -94,7 +102,7 @@ export default function RecommendationsPage() {
           )}
         </div>
       )}
-    </DashboardShell>
+    </WizardShell>
   );
 }
 
@@ -102,7 +110,7 @@ function Section({ title, items, onDone }: { title: string; items: Recommendatio
   if (items.length === 0) return null;
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-[var(--muted-soft)] mb-2 px-1">
+      <p className="label-micro mb-2 px-1">
         {title} ({items.length})
       </p>
       <div className="space-y-2">

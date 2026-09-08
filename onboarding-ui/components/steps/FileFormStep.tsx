@@ -90,8 +90,11 @@ export function FileFormStep({
     <div className="space-y-4">
       {extraFieldsNote && <p className="text-sm text-[var(--muted)]">{extraFieldsNote}</p>}
       {fields.length > 0 && (
-        <div className="panel p-4 anim-fade-in-up">
-          <GenericFileForm fields={fields} values={values} onChange={(name, v) => setValues((prev) => ({ ...prev, [name]: v }))} />
+        <div className="space-y-2 anim-fade-in-up">
+          <span className="label-micro">Your changes</span>
+          <div className="panel p-4">
+            <GenericFileForm fields={fields} values={values} onChange={(name, v) => setValues((prev) => ({ ...prev, [name]: v }))} />
+          </div>
         </div>
       )}
 
@@ -109,10 +112,13 @@ export function FileFormStep({
       </div>
 
       {diffs && (
-        <div className="space-y-3 anim-fade-in-up">
-          {diffs.map((d, i) => (
-            <DiffView key={i} diff={d} />
-          ))}
+        <div className="space-y-2 anim-fade-in-up">
+          <span className="label-micro">Preview</span>
+          <div className="space-y-3">
+            {diffs.map((d, i) => (
+              <DiffView key={i} diff={d} />
+            ))}
+          </div>
         </div>
       )}
 

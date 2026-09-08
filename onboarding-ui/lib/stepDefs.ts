@@ -1,4 +1,4 @@
-// Client-safe step metadata (no Node imports) — the dashboard and detail pages both read this.
+// Client-safe step metadata (no Node imports) — the wizard and detail pages both read this.
 // Status per step comes from GET /api/status (server-computed via lib/detectors.ts); this file
 // only describes what to show, in what order, and how steps relate to each other.
 
@@ -64,15 +64,6 @@ export const STEP_DEFS: StepDef[] = [
     icon: "🎯",
   },
   {
-    id: "ci-workflow",
-    title: "CI workflow",
-    shortTitle: "CI workflow",
-    description: "Wire up real lint/test commands in .github/workflows/ci.yml.",
-    kind: "file-form",
-    group: "required",
-    icon: "⚙️",
-  },
-  {
     id: "sensor-table",
     title: "Sensor Dispatch Table",
     shortTitle: "Sensors",
@@ -80,24 +71,6 @@ export const STEP_DEFS: StepDef[] = [
     kind: "file-form",
     group: "required",
     icon: "📡",
-  },
-  {
-    id: "codeowners",
-    title: "Code ownership",
-    shortTitle: "CODEOWNERS",
-    description: "Map path globs to GitHub handles/teams so review requests route correctly.",
-    kind: "file-form",
-    group: "optional",
-    icon: "👥",
-  },
-  {
-    id: "talisman",
-    title: "Secret scanning",
-    shortTitle: "Talisman",
-    description: "Generate .talismanrc checksum entries for your real files.",
-    kind: "run",
-    group: "optional",
-    icon: "🔒",
   },
   {
     id: "jira",

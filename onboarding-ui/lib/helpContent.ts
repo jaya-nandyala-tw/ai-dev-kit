@@ -97,25 +97,6 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
     ],
   },
 
-  "ci-workflow": {
-    why: [
-      ".github/workflows/ci.yml ships with echo \"TODO\" placeholder steps — CI won't actually lint or test anything until real commands are wired in.",
-    ],
-    impact: [
-      "Writes the lint/test job steps inside .github/workflows/ci.yml. The pre-commit job and workflow triggers are untouched.",
-    ],
-    examples: [
-      {
-        label: "Example lint step",
-        content: "- uses: actions/setup-python@v5\n  with:\n    python-version: \"3.12\"\n- run: pip install -r requirements.txt\n- run: ruff check .",
-      },
-      {
-        label: "Example test step",
-        content: "- uses: actions/setup-node@v4\n  with:\n    node-version: \"20\"\n- run: npm ci && npm test",
-      },
-    ],
-  },
-
   "sensor-table": {
     why: [
       "This table tells AI agents exactly which command to run after editing a matching file — without it, agents either skip verification entirely or guess at a command that may not exist.",
@@ -128,36 +109,6 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
         label: "Example row",
         content:
           "Pattern:  codebase/billing-service/src/**/*.py\nCommand:  ruff check {file} && pytest -xvs tests/\nCwd:      codebase/billing-service/\n\n→ @implement runs that exact command after touching a matching file.",
-      },
-    ],
-  },
-
-  codeowners: {
-    why: [
-      "GitHub uses CODEOWNERS to auto-request reviewers on a PR — without real handles in it, review routing is a no-op, silently.",
-      "This has no effect on the AI harness itself (agents don't read it) — it's purely a GitHub review-routing convenience, which is why it's optional.",
-    ],
-    impact: ["Writes CODEOWNERS."],
-    examples: [
-      {
-        label: "Example",
-        content: "/scripts/   @your-org/platform-team\n\n→ any PR touching scripts/ auto-requests that team's review.",
-      },
-    ],
-  },
-
-  talisman: {
-    why: [
-      "Secret-scanning — catches an accidentally committed key/token/credential before it ever leaves your machine.",
-    ],
-    impact: [
-      "Runs: talisman -i. It detects your currently staged files and interactively lets you append checksum entries to .talismanrc for anything you explicitly choose to allow-list.",
-    ],
-    examples: [
-      {
-        label: "When you'd use this",
-        content:
-          "talisman flags a staged file as a likely secret (e.g. a test fixture that happens to\nlook like an API key). Running this lets you allow-list that exact file content by\nchecksum — a real edit to that file later still gets re-scanned.",
       },
     ],
   },
@@ -179,27 +130,53 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
   },
 };
 
-export const GLOBAL_HELP = {
+type GlobalHelpGuarantee = { icon: string; text: string };
+type GlobalHelpSection =
+  | { title: string; icon: string; body: string[] }
+  | { title: string; icon: string; guarantees: GlobalHelpGuarantee[] };
+
+export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
   sections: [
     {
       title: "What is this?",
+      icon: "🧭",
       body: [
-        "A local-only setup dashboard for adopting the AI Starter Kit into your team's repo. It replaces manually editing placeholder files and running scripts from ONBOARDING.md with a guided, click-through flow — reading and writing the real files in this repo, and running the real setup scripts, live.",
+        "A local-only setup wizard for adopting the AI Starter Kit into your team's repo. It replaces manually editing placeholder files and running scripts from ONBOARDING.md with a guided, click-through flow — reading and writing the real files in this repo, and running the real setup scripts, live.",
       ],
     },
     {
       title: "Is it actually safe to let this run terminal commands?",
-      body: [
-        "Localhost-only. The server rejects any request whose Host header isn't localhost/127.0.0.1 — it can't be reached from outside your machine, even on a shared network.",
-        "Nothing runs automatically. Every mutating action — a file write or a script run — shows an explicit confirmation first, listing exactly what will change or execute, before anything happens.",
-        "Every file write shows a diff first. You see the exact before/after before it's applied, and a timestamped .bak copy is made automatically if the file already existed.",
-        "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install, talisman -i), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
-        "Network calls only happen when you ask for them. Cloning repos talks to GitHub because that step needs to — nothing else here reaches the network on its own.",
-        "It's a plain local Next.js app. Nothing obfuscated, no telemetry, no phoning home — the entire source is in onboarding-ui/ if you want to read it yourself.",
+      icon: "🔒",
+      guarantees: [
+        {
+          icon: "🏠",
+          text: "Localhost-only. The server rejects any request whose Host header isn't localhost/127.0.0.1 — it can't be reached from outside your machine, even on a shared network.",
+        },
+        {
+          icon: "✋",
+          text: "Nothing runs automatically. Every mutating action — a file write or a script run — shows an explicit confirmation first, listing exactly what will change or execute, before anything happens.",
+        },
+        {
+          icon: "👁️",
+          text: "Every file write shows a diff first. You see the exact before/after before it's applied, and a timestamped .bak copy is made automatically if the file already existed.",
+        },
+        {
+          icon: "📌",
+          text: "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install, talisman -i), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
+        },
+        {
+          icon: "🌐",
+          text: "Network calls only happen when you ask for them. Cloning repos talks to GitHub because that step needs to — nothing else here reaches the network on its own.",
+        },
+        {
+          icon: "🚫",
+          text: "It's a plain local Next.js app. Nothing obfuscated, no telemetry, no phoning home — the entire source is in onboarding-ui/ if you want to read it yourself.",
+        },
       ],
     },
     {
       title: "What's reversible",
+      icon: "↺",
       body: [
         "File writes: reversible via the automatic .bak-<timestamp> backup, or `git checkout` if the file was already tracked.",
         "git rm (Recommended Resources cleanup): reversible via `git status` / `git checkout` as long as you haven't committed yet.",
@@ -208,8 +185,9 @@ export const GLOBAL_HELP = {
     },
     {
       title: "Where to read more",
+      icon: "📚",
       body: [
-        "onboarding-ui/README.md — how this dashboard works under the hood.",
+        "onboarding-ui/README.md — how this wizard works under the hood.",
         "README.md / ONBOARDING.md at the repo root — the full starter kit and its manual adoption checklist.",
       ],
     },

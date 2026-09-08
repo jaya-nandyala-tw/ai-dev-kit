@@ -2,27 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Bold Typography tokens ──────────────────────────────────────────────
+   Poster-design-as-web: type is the hero, color exists to create contrast,
+   space exists to frame letterforms. Sharp edges (radius: 0) match sharp
+   type. Status colors (ok/warn/danger) are a deliberate exception to the
+   "restrained palette" principle — they're load-bearing signal in a
+   functional tool, not decoration, so they stay distinct hues, just tuned
+   to sit warmly against the vermillion accent instead of a cool leftover
+   palette.
+
+   Light is the default theme (bare :root); dark is the alternate, applied
+   via [data-theme="dark"] on <html> (see ThemeToggle.tsx + the no-flash
+   boot script in layout.tsx). The accent/ok/warn/danger hues are NOT
+   identical between the two — they're independently darkened for light
+   mode where needed to hold AA contrast against a near-white background,
+   not just inverted bg/text. */
 :root {
-  --bg: #0b0d10;
-  --bg-elevated: #101319;
-  --panel: #151922;
-  --panel-hover: #1a1f2a;
-  --border: #262c38;
-  --border-soft: #1d222c;
-  --text: #eef1f6;
-  --muted: #8b94a7;
-  --muted-soft: #5f6779;
-  --accent: #5b8cff;
-  --accent-strong: #7aa2ff;
-  --accent-soft: rgba(91, 140, 255, 0.14);
-  --ok: #35d08c;
-  --ok-soft: rgba(53, 208, 140, 0.14);
-  --warn: #eab54d;
-  --warn-soft: rgba(234, 181, 77, 0.14);
-  --danger: #ef5b64;
-  --danger-soft: rgba(239, 91, 100, 0.14);
-  --radius: 14px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.45);
+  --bg: #fafafa;
+  --bg-elevated: #f2f2f2;
+  --panel: #ffffff;
+  --panel-hover: #eeeeee;
+  --border: #e2e2e2;
+  --border-soft: #ececec;
+  --text: #0a0a0a;
+  --muted: #5c5c5c;
+  --muted-soft: #8a8a8a;
+  --accent: #d93400;
+  --accent-strong: #b82c00;
+  --accent-soft: rgba(217, 52, 0, 0.1);
+  --ok: #1c8f5a;
+  --ok-soft: rgba(28, 143, 90, 0.1);
+  --warn: #a6690a;
+  --warn-soft: rgba(166, 105, 10, 0.1);
+  --danger: #c4383d;
+  --danger-soft: rgba(196, 56, 61, 0.1);
+  --radius: 0px;
+  --shadow: none;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --bg-elevated: #0f0f0f;
+  --panel: #0f0f0f;
+  --panel-hover: #1a1a1a;
+  --border: #262626;
+  --border-soft: #1a1a1a;
+  --text: #fafafa;
+  --muted: #737373;
+  --muted-soft: #595959;
+  --accent: #ff3d00;
+  --accent-strong: #ff6b3d;
+  --accent-soft: rgba(255, 61, 0, 0.14);
+  --ok: #2fb876;
+  --ok-soft: rgba(47, 184, 118, 0.14);
+  --warn: #e0a83a;
+  --warn-soft: rgba(224, 168, 58, 0.14);
+  --danger: #e5484d;
+  --danger-soft: rgba(229, 72, 77, 0.14);
 }
 
 * {
@@ -34,11 +70,15 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(1200px 500px at 15% -10%, rgba(91, 140, 255, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(53, 208, 140, 0.05), transparent 55%),
-    var(--bg);
+  /* Flat, near-black — depth here comes from layered type and the noise-grain overlay
+     (NoiseOverlay.tsx), not ambient color glows. */
+  background: var(--bg);
   color: var(--text);
+  font-family: var(--font-sans), "Inter Tight", system-ui, sans-serif;
+  /* No ambient negative tracking here — Inter Tight is already a tightly-tracked font by
+     design, and stacking another -0.01em on top of it made every paragraph/description in the
+     app (not just headlines) read as cramped. Headings opt into tighter tracking explicitly via
+     `tracking-tight`/`tracking-tighter`; body copy stays at the font's own natural spacing. */
   font-feature-settings: "cv11", "ss01";
 }
 
@@ -49,7 +89,7 @@ body {
 *:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 /* Slim, unobtrusive scrollbars */
@@ -70,10 +110,10 @@ body {
 }
 
 .panel {
-  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-elevated) 100%);
+  /* No shadow, no gradient — border-only depth, per the design system's Card guidance. */
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
 }
 
 .panel-flat {
@@ -83,18 +123,32 @@ body {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono), "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Docsite-style micro-label: mono, uppercase, wide tracking — the recurring "this is a caption,
+   not content" signal used for eyebrows, table headers, section labels throughout the app.
+   Centralized here instead of repeating `text-[0.65rem] uppercase tracking-wide ...` inline. */
+.label-micro {
+  font-family: var(--font-mono), "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-soft);
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius);
+  font-family: var(--font-mono), "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   border: 1px solid var(--border);
   white-space: nowrap;
 }
@@ -154,17 +208,6 @@ body {
   }
 }
 
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -195,9 +238,6 @@ body {
 .anim-fade-in {
   animation: fade-in 0.2s ease both;
 }
-.anim-slide-in-right {
-  animation: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
 .anim-scale-in {
   animation: scale-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -217,91 +257,153 @@ body {
 }
 
 .running-stripes {
+  /* color-mix() derives the tint live from --accent, so this stays correct in both themes
+     instead of hardcoding one theme's RGB numbers (the old blue leftovers from the pre-Bold
+     Typography palette were exactly this mistake, twice). */
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(91, 140, 255, 0.35) 0,
-    rgba(91, 140, 255, 0.35) 6px,
+    color-mix(in srgb, var(--accent) 30%, transparent) 0,
+    color-mix(in srgb, var(--accent) 30%, transparent) 6px,
     transparent 6px,
     transparent 12px
   );
   animation: progress-stripes 0.9s linear infinite;
 }
 
-/* ── Buttons ────────────────────────────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────────────────────
+   Text-first, per the design system: buttons are not filled shapes, they're
+   typographic actions with an underline as the affordance. Fast, decisive
+   motion (150ms, no bounce) — see the design system's Motion Philosophy. */
 
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  font-size: 0.925rem;
+  gap: 0.5rem;
+  font-family: var(--font-sans), "Inter Tight", system-ui, sans-serif;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.55rem 1rem;
-  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: var(--radius);
   border: 1px solid transparent;
-  transition: transform 0.12s ease, filter 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
   cursor: pointer;
   white-space: nowrap;
 }
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  filter: none !important;
 }
 .btn:not(:disabled):active {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(1px);
 }
 
+/* Primary: no fill, accent text, animated underline growing from center-out on hover. */
 .btn-primary {
-  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
-  color: white;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 6px 16px -6px rgba(91, 140, 255, 0.55);
+  padding: 0.6rem 0;
+  color: var(--accent);
+  background: transparent;
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.35rem;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(1);
+  transition: transform 0.15s cubic-bezier(0.25, 0, 0, 1);
 }
 .btn-primary:not(:disabled):hover {
-  filter: brightness(1.08);
+  color: var(--accent-strong);
+}
+.btn-primary:not(:disabled):hover::after {
+  transform: scaleX(1.08);
+  background: var(--accent-strong);
 }
 
+/* Secondary/outline: border in foreground, full color-inversion on hover. */
 .btn-secondary {
-  background: var(--panel-hover);
-  border-color: var(--border);
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border-color: var(--text);
   color: var(--text);
 }
 .btn-secondary:not(:disabled):hover {
-  border-color: var(--muted-soft);
-  background: #1e2430;
+  background: var(--text);
+  color: var(--bg);
 }
 
+/* Modifier for a secondary button sitting on an already-inverted (light) section, e.g. the
+   Closing CTA band — the invert direction has to flip too, or hovering would fade the button
+   into a background that's already light. */
+.btn-on-light {
+  border-color: var(--bg);
+  color: var(--bg);
+}
+.btn-on-light:not(:disabled):hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Ghost: quiet by default, thin underline reveals on hover. */
 .btn-ghost {
+  position: relative;
+  padding: 0.6rem 0.9rem;
   background: transparent;
   color: var(--muted);
 }
+.btn-ghost::after {
+  content: "";
+  position: absolute;
+  left: 0.9rem;
+  right: 0.9rem;
+  bottom: 0.4rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 0.15s cubic-bezier(0.25, 0, 0, 1);
+}
 .btn-ghost:not(:disabled):hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
+}
+.btn-ghost:not(:disabled):hover::after {
+  transform: scaleX(1);
 }
 
+/* Danger: same outline/invert language as secondary, in the danger hue. */
 .btn-danger {
-  background: linear-gradient(180deg, #f16b73, var(--danger));
-  color: white;
-  box-shadow: 0 6px 16px -6px rgba(239, 91, 100, 0.5);
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .btn-danger:not(:disabled):hover {
-  filter: brightness(1.08);
+  background: var(--danger);
+  color: var(--bg);
 }
 
 .btn-sm {
-  font-size: 0.8rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  font-size: 0.72rem;
+  padding: 0.4rem 0.85rem;
+}
+.btn-sm.btn-primary {
+  padding: 0.4rem 0;
+}
+.btn-sm.btn-ghost {
+  padding: 0.4rem 0.6rem;
 }
 
 /* ── Form controls ─────────────────────────────────────────────────────── */
 
 .field-input {
   width: 100%;
-  background: var(--bg-elevated);
+  background: var(--panel-hover);
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--radius);
   padding: 0.6rem 0.8rem;
   font-size: 0.95rem;
   color: var(--text);
@@ -315,7 +417,32 @@ body {
 }
 .field-input:focus {
   border-color: var(--accent);
-  background: #0f131b;
+  background: var(--bg-elevated);
+}
+
+/* ── Global help FAB (fixed, bottom-right, every page) ─────────────────── */
+
+.help-fab {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 1.15rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s cubic-bezier(0.25, 0, 0, 1);
+}
+.help-fab:hover {
+  background: var(--accent-strong);
+  transform: translateY(-2px);
+}
+.help-fab:active {
+  transform: translateY(0);
 }
 
 /* ── Card hover affordance (clickable rows/cards) ──────────────────────── */
@@ -326,4 +453,64 @@ body {
 .card-interactive:hover {
   border-color: var(--muted-soft);
   background: var(--panel-hover);
+}
+
+/* ── Workflow diagram (WorkflowDiagram.tsx) ────────────────────────────── */
+/* Ported from a one-off release-note SVG — recolored onto this app's tokens (so it's
+   theme-aware) and sharpened to rx:0 (so it matches the rest of the system) instead of
+   reusing the source page's own bespoke ink/paper/bronze palette and rounded corners. */
+
+.wf-node {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 1.3;
+}
+.wf-gate {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.wf-loop {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.3;
+  stroke-dasharray: 4 3;
+}
+.wf-sub {
+  fill: var(--bg-elevated);
+  stroke: var(--border-soft);
+  stroke-width: 1;
+}
+.wf-flow {
+  stroke: var(--muted-soft);
+  stroke-width: 1.4;
+  fill: none;
+}
+.wf-fail {
+  stroke: var(--danger);
+  stroke-width: 1.4;
+  fill: none;
+  stroke-dasharray: 5 4;
+}
+.wf-title {
+  fill: var(--text);
+  font-family: var(--font-sans), "Inter Tight", system-ui, sans-serif;
+  font-weight: 600;
+}
+.wf-label {
+  fill: var(--muted);
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 10.5px;
+}
+.wf-fail-label {
+  fill: var(--danger);
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.wf-loop-title {
+  fill: var(--muted);
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }

@@ -45,15 +45,16 @@ export function ConfirmDialog({
       <div className="panel w-full max-w-lg p-5 anim-scale-in" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-3 mb-3">
           <span
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm"
+            className="w-8 h-8 border flex items-center justify-center shrink-0 text-sm"
             style={{
               background: danger ? "var(--danger-soft)" : "var(--accent-soft)",
+              borderColor: danger ? "var(--danger)" : "var(--accent)",
               color: danger ? "var(--danger)" : "var(--accent-strong)",
             }}
           >
             {danger ? "⚠" : "👀"}
           </span>
-          <h3 className="text-base font-semibold pt-1">{title}</h3>
+          <h3 className="text-base font-bold tracking-tight pt-1">{title}</h3>
         </div>
         <div className="text-sm text-[var(--muted)] mb-4 pl-11">{body}</div>
         {requireCheckbox && (

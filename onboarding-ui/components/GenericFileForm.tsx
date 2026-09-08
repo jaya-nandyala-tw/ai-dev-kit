@@ -31,7 +31,7 @@ export function GenericFileForm({
         if (field.type === "textarea") {
           return (
             <div key={field.name}>
-              <label className="block text-sm mb-1.5 font-medium">{field.label}</label>
+              <label className="block text-sm mb-1.5 font-semibold">{field.label}</label>
               <textarea
                 className="field-input mono"
                 rows={5}
@@ -45,7 +45,7 @@ export function GenericFileForm({
         }
         return (
           <div key={field.name}>
-            <label className="block text-sm mb-1.5 font-medium">{field.label}</label>
+            <label className="block text-sm mb-1.5 font-semibold">{field.label}</label>
             <input
               className="field-input"
               placeholder={field.placeholder}
@@ -88,7 +88,7 @@ function TableField({
 
   return (
     <div>
-      <label className="block text-sm mb-2 font-medium">{field.label}</label>
+      <label className="block text-sm mb-2 font-semibold">{field.label}</label>
 
       {rows.length === 0 && (
         <div className="panel-flat border-dashed p-4 text-center text-sm text-[var(--muted-soft)] mb-2">
@@ -103,9 +103,7 @@ function TableField({
             <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
               {columns.map((c) => (
                 <div key={c.name}>
-                  <span className="block text-[0.65rem] uppercase tracking-wide text-[var(--muted-soft)] mb-1">
-                    {c.label}
-                  </span>
+                  <span className="label-micro block mb-1">{c.label}</span>
                   <input
                     className="field-input mono text-xs py-1.5"
                     placeholder={c.placeholder ?? c.label}

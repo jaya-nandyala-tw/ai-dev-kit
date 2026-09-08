@@ -116,45 +116,6 @@ const preCommitConfig: ManagedFileDef = {
   },
 };
 
-// ── .github/workflows/ci.yml ────────────────────────────────────────────────
-
-const ciWorkflow: ManagedFileDef = {
-  key: "ci-workflow",
-  label: "CI lint/test steps",
-  relPaths: [".github/workflows/ci.yml"],
-  fields: [
-    { name: "lintSteps", label: "Lint job steps (YAML, inserted after checkout)", type: "textarea", placeholder: "- uses: actions/setup-python@v5\n  with:\n    python-version: \"3.12\"\n- run: pip install -r requirements.txt\n- run: ruff check ." },
-    { name: "testSteps", label: "Test job steps (YAML, inserted after checkout)", type: "textarea", placeholder: "- uses: actions/setup-node@v4\n  with:\n    node-version: \"20\"\n- run: npm ci && npm test" },
-  ],
-  baseline: () => T.CI_WORKFLOW_BASELINE,
-  parseCurrentValues: () => ({ lintSteps: "", testSteps: "" }),
-  buildProposed: (values) => {
-    const indent = (yaml: string, spaces: number) =>
-      yaml
-        .split("\n")
-        .map((line) => (line.trim() ? " ".repeat(spaces) + line : line))
-        .join("\n");
-
-    const lintSteps = String(values.lintSteps ?? "").trim();
-    const testSteps = String(values.testSteps ?? "").trim();
-
-    let proposed = T.CI_WORKFLOW_BASELINE;
-    if (lintSteps) {
-      proposed = proposed.replace(
-        /(lint:\n {4}runs-on: ubuntu-latest\n {4}steps:\n {6}- uses: actions\/checkout@v4\n)[\s\S]*?(\n\n {2}test:)/,
-        `$1${indent(lintSteps, 6)}\n$2`,
-      );
-    }
-    if (testSteps) {
-      proposed = proposed.replace(
-        /(test:\n {4}runs-on: ubuntu-latest\n {4}steps:\n {6}- uses: actions\/checkout@v4\n)[\s\S]*?(\n\n {2}pre-commit:)/,
-        `$1${indent(testSteps, 6)}\n$2`,
-      );
-    }
-    return { ".github/workflows/ci.yml": proposed };
-  },
-};
-
 // ── .github/instructions/global.instructions.md (Sensor Dispatch Table only) ─
 
 type SensorRow = { pattern: string; command: string; cwd: string };
@@ -343,7 +304,6 @@ const jiraBoard: ManagedFileDef = {
 const REGISTRY: Record<string, ManagedFileDef> = {
   codeowners,
   "pre-commit-config": preCommitConfig,
-  "ci-workflow": ciWorkflow,
   "global-instructions": globalInstructions,
   "repos-json": reposJson,
   env: envFile,

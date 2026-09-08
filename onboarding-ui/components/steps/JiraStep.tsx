@@ -5,8 +5,12 @@ import { FileFormStep } from "@/components/steps/FileFormStep";
 export function JiraStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
-      <div className="panel p-4">
-        <p className="text-sm mb-3 font-medium">Credentials (.env)</p>
+      <div className="panel-flat p-4">
+        <p className="flex items-center gap-2 mb-3">
+          <span>🔑</span>
+          <span className="text-sm font-semibold">Credentials</span>
+          <span className="mono text-xs text-[var(--muted-soft)]">.env</span>
+        </p>
         <FileFormStep
           fileKey="env"
           stepId="jira"
@@ -14,8 +18,12 @@ export function JiraStep({ onDone }: { onDone: () => void }) {
           fieldFilter={["DEV_EMAIL", "JIRA_BASE_URL", "JIRA_API_TOKEN"]}
         />
       </div>
-      <div className="panel p-4">
-        <p className="text-sm mb-3 font-medium">Board (jira_client/fetch_my_stories.py + fetch_sprint_stories.py)</p>
+      <div className="panel-flat p-4">
+        <p className="flex items-center gap-2 mb-3">
+          <span>🎫</span>
+          <span className="text-sm font-semibold">Board</span>
+          <span className="mono text-xs text-[var(--muted-soft)]">jira_client/fetch_*.py</span>
+        </p>
         <FileFormStep fileKey="jira-board" stepId="jira" onWritten={onDone} />
       </div>
     </div>

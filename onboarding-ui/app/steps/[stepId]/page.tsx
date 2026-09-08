@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { DashboardShell } from "@/components/DashboardShell";
+import { WizardShell } from "@/components/WizardShell";
 import { getAdjacentStepIds, getStepDef, getVisibleSteps } from "@/lib/stepDefs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StepHelpButton } from "@/components/StepHelpButton";
+import { ProgressRail } from "@/components/ProgressRail";
 import { Button } from "@/components/ui/Button";
 import { PrerequisitesStep } from "@/components/steps/PrerequisitesStep";
 import { QuestionnaireStep } from "@/components/steps/QuestionnaireStep";
@@ -15,19 +17,46 @@ import { FileFormStep } from "@/components/steps/FileFormStep";
 import { JiraStep } from "@/components/steps/JiraStep";
 
 const FILE_FORM_KEY_BY_STEP: Record<string, string> = {
-  codeowners: "codeowners",
   "pre-commit-config": "pre-commit-config",
-  "ci-workflow": "ci-workflow",
   "sensor-table": "global-instructions",
 };
+
+// layout.tsx's outer container closes with `py-8` (2rem) below this page — subtracted here so
+// the measured pane's bottom edge lands exactly on that padding instead of pushing the page
+// another 2rem past the viewport and reintroducing outer scroll.
+const OUTER_BOTTOM_PADDING_PX = 32;
+const MIN_PANE_HEIGHT_PX = 360;
 
 export default function StepPage() {
   const params = useParams<{ stepId: string }>();
   const stepId = params.stepId;
   const def = getStepDef(stepId);
 
+  // Hooks live here, not inside WizardShell's render-prop below — that callback is skipped
+  // entirely while WizardShell is still loading, which would make hook call order conditional.
+  const paneRef = useRef<HTMLDivElement>(null);
+  const [paneHeight, setPaneHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    function measure() {
+      const el = paneRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setPaneHeight(Math.max(MIN_PANE_HEIGHT_PX, window.innerHeight - top - OUTER_BOTTOM_PADDING_PX));
+    }
+    measure();
+    // A late webfont swap or content change can shift where the pane starts; both listeners are
+    // cheap and just re-measure rather than trying to predict every layout-shifting cause.
+    window.addEventListener("resize", measure);
+    const raf = requestAnimationFrame(measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      cancelAnimationFrame(raf);
+    };
+  }, [stepId]);
+
   return (
-    <DashboardShell>
+    <WizardShell>
       {({ profile, statuses, refresh }) => {
         if (!def) return <p className="text-[var(--danger)]">Unknown step.</p>;
 
@@ -37,25 +66,38 @@ export default function StepPage() {
         const status = statuses[stepId]?.status ?? "not-started";
 
         return (
-          <div key={stepId} className="anim-fade-in-up space-y-5">
-            <div className="panel-flat p-5">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs uppercase tracking-wide text-[var(--muted-soft)]">
-                  Step {position} of {visible.length} · {def.group === "required" ? "Required" : "Optional"}
-                </p>
-                <StatusBadge status={status} />
-              </div>
-              <div className="flex items-center justify-between gap-2.5">
+          <div
+            key={stepId}
+            ref={paneRef}
+            className="anim-fade-in-up max-w-7xl mx-auto flex flex-col gap-5"
+            style={{ height: paneHeight ? `${paneHeight}px` : undefined }}
+          >
+            {/* Header — progress rail + step info card. Never scrolls. */}
+            <div className="shrink-0">
+              <ProgressRail currentStepId={stepId} profile={profile} statuses={statuses} />
+
+              <div className="panel-flat p-5">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="label-micro">
+                    Step {position} of {visible.length} · {def.group === "required" ? "Required" : "Optional"}
+                  </p>
+                  <div className="flex items-center gap-2.5">
+                    <StatusBadge status={status} />
+                    <StepHelpButton stepId={stepId} title={def.title} icon={def.icon} />
+                  </div>
+                </div>
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl leading-none">{def.icon}</span>
-                  <h1 className="text-lg font-semibold">{def.title}</h1>
+                  <h1 className="text-xl font-bold tracking-tight">{def.title}</h1>
                 </div>
-                <StepHelpButton stepId={stepId} title={def.title} icon={def.icon} />
+                <p className="text-sm text-[var(--muted)] mt-1">{def.description}</p>
               </div>
-              <p className="text-sm text-[var(--muted)] mt-1">{def.description}</p>
             </div>
 
-            <div>
+            {/* Content — the only part that scrolls. min-h-0 overrides flexbox's default
+                min-height:auto, which would otherwise let this grow past the pane instead of
+                scrolling internally. */}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
               {def.kind === "prerequisites" && <PrerequisitesStep status={statuses[stepId]} />}
 
               {def.kind === "questionnaire" && <QuestionnaireStep initial={profile} onSaved={refresh} />}
@@ -72,16 +114,6 @@ export default function StepPage() {
                 />
               )}
 
-              {def.kind === "run" && stepId === "talisman" && (
-                <RunStep
-                  scriptKey="talisman-init"
-                  stepId="talisman"
-                  label="Generate .talismanrc checksums"
-                  confirmBody="Runs: talisman -i (interactively detects staged changes and appends checksum entries)."
-                  onDone={refresh}
-                />
-              )}
-
               {def.kind === "file-form" && stepId !== "jira" && FILE_FORM_KEY_BY_STEP[stepId] && (
                 <FileFormStep fileKey={FILE_FORM_KEY_BY_STEP[stepId]} stepId={stepId} onWritten={refresh} />
               )}
@@ -89,7 +121,8 @@ export default function StepPage() {
               {stepId === "jira" && <JiraStep onDone={refresh} />}
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--border-soft)]">
+            {/* Footer — Back/Continue. Pinned to the bottom of the pane, never scrolls. */}
+            <div className="shrink-0 flex items-center justify-between pt-2 border-t border-[var(--border-soft)]">
               {prev ? (
                 <Link href={`/steps/${prev.id}`}>
                   <Button variant="ghost" icon={<span>←</span>}>
@@ -120,6 +153,6 @@ export default function StepPage() {
           </div>
         );
       }}
-    </DashboardShell>
+    </WizardShell>
   );
 }

@@ -1,17 +1,21 @@
 import type { DiffResult } from "@/types";
 
 function DiffLine({ line }: { line: string }) {
-  let color = "text-[var(--text)]";
-  let bg = "";
+  let color = "var(--text)";
+  let bg = "transparent";
   if (line.startsWith("+") && !line.startsWith("+++")) {
-    color = "text-[var(--ok)]";
-    bg = "bg-[rgba(53,208,140,0.06)]";
+    color = "var(--ok)";
+    bg = "color-mix(in srgb, var(--ok) 8%, transparent)";
   } else if (line.startsWith("-") && !line.startsWith("---")) {
-    color = "text-[var(--danger)]";
-    bg = "bg-[rgba(239,91,100,0.06)]";
-  } else if (line.startsWith("@@")) color = "text-[var(--accent-strong)]";
-  else if (line.startsWith("---") || line.startsWith("+++")) color = "text-[var(--muted-soft)]";
-  return <div className={`mono whitespace-pre px-2 ${color} ${bg}`}>{line || " "}</div>;
+    color = "var(--danger)";
+    bg = "color-mix(in srgb, var(--danger) 8%, transparent)";
+  } else if (line.startsWith("@@")) color = "var(--accent-strong)";
+  else if (line.startsWith("---") || line.startsWith("+++")) color = "var(--muted-soft)";
+  return (
+    <div className="mono whitespace-pre px-2" style={{ color, background: bg }}>
+      {line || " "}
+    </div>
+  );
 }
 
 export function DiffView({ diff }: { diff: DiffResult }) {
@@ -21,7 +25,7 @@ export function DiffView({ diff }: { diff: DiffResult }) {
   return (
     <div className="panel-flat overflow-hidden text-xs anim-fade-in-up">
       <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-soft)]">
-        <span className="mono text-[var(--muted)] flex items-center gap-1.5">
+        <span className="mono text-xs tracking-wide text-[var(--muted-soft)] flex items-center gap-1.5">
           <span>📄</span>
           {diff.path.split("/").slice(-3).join("/")}
         </span>

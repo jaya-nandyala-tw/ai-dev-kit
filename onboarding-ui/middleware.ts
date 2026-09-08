@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "This onboarding dashboard only serves localhost. Refusing a request with " +
+          "This onboarding wizard only serves localhost. Refusing a request with " +
           `Host: "${host}". Never expose this tool beyond your own machine.`,
       },
       { status: 403 },

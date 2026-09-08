@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { fetchStatus } from "@/lib/apiClient";
-import { Stepper } from "./Stepper";
 import type { ProfileAnswers, StepStatusEntry } from "@/types";
 
 export type StatusContext = {
@@ -11,7 +10,10 @@ export type StatusContext = {
   refresh: () => Promise<void>;
 };
 
-export function DashboardShell({
+// No persistent sidebar — every page is single-column, full-width, matching the homepage's
+// editorial layout. Progress is indicated per-page instead: ProgressRail on step pages, the
+// Roadmap section on the homepage (which doubles as "jump to any step").
+export function WizardShell({
   children,
 }: {
   children: (ctx: StatusContext) => React.ReactNode;
@@ -31,10 +33,5 @@ export function DashboardShell({
     refresh();
   }, [refresh]);
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-[22.5rem_1fr] gap-6">
-      <Stepper statuses={statuses} profile={profile} />
-      <main>{loaded ? children({ profile, statuses, refresh }) : <p className="text-[var(--muted)]">Loading…</p>}</main>
-    </div>
-  );
+  return <main>{loaded ? children({ profile, statuses, refresh }) : <p className="text-[var(--muted)]">Loading…</p>}</main>;
 }

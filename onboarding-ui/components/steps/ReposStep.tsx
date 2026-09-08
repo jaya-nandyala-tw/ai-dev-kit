@@ -6,10 +6,24 @@ import { DiffView } from "@/components/DiffView";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RunStep } from "@/components/steps/RunStep";
 import { Button } from "@/components/ui/Button";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { toast } from "@/lib/toast";
 import type { DiffResult } from "@/types";
 
 type Row = { name: string; visibility: string; selected: boolean; tier: "core" | "worker" };
+
+// Three real phases (connect → select → clone), each a real git/network operation — numbered
+// so the multi-stage nature of this step reads clearly instead of as one long stack of panels.
+function PhaseLabel({ n, title }: { n: string; title: string }) {
+  return (
+    <p className="flex items-baseline gap-2 mb-3">
+      <span className="mono text-sm font-semibold" style={{ color: "var(--accent)" }}>
+        {n}
+      </span>
+      <span className="text-sm font-semibold">{title}</span>
+    </p>
+  );
+}
 
 export function ReposStep({ onWritten }: { onWritten: () => void }) {
   const [org, setOrg] = useState("");
@@ -83,8 +97,8 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
 
   return (
     <div className="space-y-4">
-      <div className="panel-flat p-4 space-y-3 anim-fade-in-up">
-        <label className="block text-sm font-medium">GitHub org</label>
+      <div className="panel-flat p-4 anim-fade-in-up">
+        <PhaseLabel n="01" title="Connect to GitHub" />
         <div className="flex gap-2">
           <input
             value={org}
@@ -103,15 +117,16 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
             Load via gh
           </Button>
         </div>
-        {ghError && <p className="text-sm text-[var(--danger)]">{ghError}</p>}
+        {ghError && <p className="text-sm text-[var(--danger)] mt-2">{ghError}</p>}
       </div>
 
       {rows.length > 0 && (
         <div className="panel-flat p-4 anim-fade-in-up">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium">
-              {rows.length} repos found · <span style={{ color: "var(--accent-strong)" }}>{selectedCount} selected</span>
-            </p>
+            <PhaseLabel n="02" title="Select repos" />
+            <span className="mono text-xs" style={{ color: "var(--accent)" }}>
+              {rows.length} found · {selectedCount} selected
+            </span>
           </div>
           <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
             {rows.map((r, i) => (
@@ -123,21 +138,15 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
                 <input type="checkbox" checked={r.selected} onChange={(e) => toggle(i, { selected: e.target.checked })} />
                 <span className="mono text-sm flex-1 min-w-[10rem]">{r.name}</span>
                 {r.selected && (
-                  <div className="flex rounded-lg overflow-hidden border border-[var(--border)] text-xs">
-                    {(["core", "worker"] as const).map((tier) => (
-                      <button
-                        key={tier}
-                        onClick={() => toggle(i, { tier })}
-                        className="px-2.5 py-1"
-                        style={{
-                          background: r.tier === tier ? "var(--accent)" : "transparent",
-                          color: r.tier === tier ? "white" : "var(--muted)",
-                        }}
-                      >
-                        {tier}
-                      </button>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    size="sm"
+                    value={r.tier}
+                    onChange={(tier) => toggle(i, { tier })}
+                    options={[
+                      { value: "core", label: "core" },
+                      { value: "worker", label: "worker" },
+                    ]}
+                  />
                 )}
               </div>
             ))}
@@ -168,28 +177,15 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
 
       {written && (
         <div className="panel-flat p-4 space-y-3 anim-fade-in-up">
-          <p className="text-sm font-medium">Clone the configured repos</p>
-          <div className="flex gap-2 text-sm">
-            {(
-              [
-                { key: "--core-only", label: "Core only" },
-                { key: "--all", label: "Core + workers" },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setScope(opt.key)}
-                className="btn btn-sm"
-                style={
-                  scope === opt.key
-                    ? { background: "var(--accent-soft)", borderColor: "var(--accent)", color: "var(--accent-strong)" }
-                    : { background: "var(--panel-hover)", borderColor: "var(--border)", color: "var(--muted)" }
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <PhaseLabel n="03" title="Clone repos" />
+          <SegmentedControl
+            value={scope}
+            onChange={setScope}
+            options={[
+              { value: "--core-only", label: "Core only" },
+              { value: "--all", label: "Core + workers" },
+            ]}
+          />
           <RunStep
             scriptKey="clone-repos"
             args={[scope]}

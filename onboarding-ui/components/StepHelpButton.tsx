@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HelpDrawer, HelpExample, HelpList, HelpSection } from "@/components/ui/HelpDrawer";
+import { HelpDialog, HelpExample, HelpList, HelpSection } from "@/components/ui/HelpDialog";
 import { STEP_HELP } from "@/lib/helpContent";
 
 export function StepHelpButton({ stepId, title, icon }: { stepId: string; title: string; icon: string }) {
@@ -15,11 +15,11 @@ export function StepHelpButton({ stepId, title, icon }: { stepId: string; title:
         onClick={() => setOpen(true)}
         aria-label={`Help for ${title}`}
         title="Why does this step exist, and what does it change?"
-        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--muted-soft)] transition-colors"
+        className="w-7 h-7 mono text-xs flex items-center justify-center shrink-0 border border-[var(--border)] text-[var(--muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
       >
         ?
       </button>
-      <HelpDrawer open={open} onClose={() => setOpen(false)} title={title} icon={icon}>
+      <HelpDialog open={open} onClose={() => setOpen(false)} title={title} icon={icon}>
         <HelpSection title="Why this step exists">
           <HelpList items={content.why} />
         </HelpSection>
@@ -35,7 +35,7 @@ export function StepHelpButton({ stepId, title, icon }: { stepId: string; title:
             ))}
           </HelpSection>
         )}
-      </HelpDrawer>
+      </HelpDialog>
     </>
   );
 }

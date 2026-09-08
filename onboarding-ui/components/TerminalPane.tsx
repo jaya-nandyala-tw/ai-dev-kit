@@ -78,14 +78,17 @@ export function TerminalPane({
           </Button>
         )}
       </div>
+      {/* Fixed dark chrome regardless of site theme — like the traffic-light dots above, a
+          terminal reads as a terminal because it's always dark, not because it follows
+          whatever theme the rest of the app is in. */}
       <div
         ref={scrollRef}
-        className={`mono text-xs whitespace-pre-wrap max-h-64 overflow-y-auto bg-black/30 p-3 ${running ? "running-stripes" : ""}`}
-        style={{ backgroundSize: "200% 100%" }}
+        className={`mono text-xs whitespace-pre-wrap max-h-64 overflow-y-auto p-3 ${running ? "running-stripes" : ""}`}
+        style={{ background: "#0a0a0a", color: "#d4d4d4", backgroundSize: "200% 100%" }}
       >
-        {lines.length === 0 && <span className="text-[var(--muted-soft)]">Waiting for output…</span>}
+        {lines.length === 0 && <span style={{ color: "#6b6b6b" }}>Waiting for output…</span>}
         {lines.map((l, i) => (
-          <span key={i} className={l.kind === "stderr" ? "text-[var(--danger)]" : undefined}>
+          <span key={i} style={l.kind === "stderr" ? { color: "#ff6b6b" } : undefined}>
             {l.text}
           </span>
         ))}
