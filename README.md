@@ -32,6 +32,18 @@ etc.) and try:
 up your own repos/services, and read the real workflow end to end: see
 [Getting Started / How to Adopt](#getting-started--how-to-adopt) below, then `ONBOARDING.md`.
 
+**Prefer a guided UI over hand-editing files?** Run the onboarding dashboard instead of doing the
+steps below by hand:
+
+```bash
+cd onboarding-ui && npm install && npm run dev
+```
+
+It's a local-only Next.js app that reads/writes the placeholder files for you with a diff preview
+before every write, runs the real setup scripts with live streamed output, asks a few questions
+about your stack to skip whatever doesn't apply to you, and flags which agents/skills/plugins/
+scripts aren't relevant to your team so you can remove them. See `onboarding-ui/README.md`.
+
 ## Guardrails
 
 This isn't just prompts — it ships one real safety mechanism, borrowed from the same idea as tool
@@ -61,6 +73,7 @@ guardrails in other agent harnesses:
 └── instructions/  always-on + path-scoped rules agents load automatically
 scripts/           AWS/Okta auth, multi-repo clone/pull, workspace toggling, local debug helpers
 config/            repos.json — single source of truth for which repos this harness manages
+onboarding-ui/     local-only guided setup dashboard — the click-through alternative to this checklist
 jira_client/       reusable Jira Cloud API client + NL CLI agent
 memories/          convention for durable repo indexes + ephemeral per-story checkpoints
 profiles/          example local-dev environment profiles
@@ -85,6 +98,7 @@ as a reference implementation of that pattern, not a required format.
 | `.github/instructions/` | Always-on and path-scoped rules (`applyTo` patterns) agents load automatically: global conventions, IaC conventions, worker/lambda conventions, the review-gate rule. |
 | `scripts/` | Generic dev-tooling: AWS/Okta auth, multi-repo clone/pull, VS Code workspace folder toggling, local lambda/worker debug and invoke helpers, a mock IdP + dev-login bypass for local auth, profile switching. |
 | `config/repos.json` | Single source of truth for which repos this harness clones/pulls/shows in the workspace — edit by hand or populate via `./scripts/clone-repos.sh --select` (GitHub CLI-backed multi-select). |
+| `onboarding-ui/` | Local-only Next.js dashboard that turns this README's adoption checklist and `ONBOARDING.md`'s setup steps into a click-through flow — diff preview before every write, live-streamed script execution, and a stack-aware "Recommended Resources" panel. `cd onboarding-ui && npm install && npm run dev`. |
 | `jira_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs, with a natural-language CLI agent. |
 | `memories/` | The convention (not the content) for durable per-repo indexes (`memories/repo/`) and ephemeral per-story checkpoints (`memories/session/`) that agents read/write. |
 | `profiles/` | Example local-dev environment profiles (`fullstack`, `backend`, `frontend`, `lambda`, `integration`, `aws-login`) switched via `scripts/profile.sh`. |

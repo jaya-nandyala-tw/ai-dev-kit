@@ -1,0 +1,8 @@
+node_modules/
+.next/
+*.tsbuildinfo
+.onboarding-state.json
+.onboarding-state.json.bak-*
+*.bak-*
+.env*.local
+npm-debug.log*

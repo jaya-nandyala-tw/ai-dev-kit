@@ -41,8 +41,10 @@ Run the smallest relevant sensor before finalizing. Examples — replace with yo
 
 Use a table like this to select the right sensor(s) based on which files changed. Fill in the `File
 Pattern` and `Cwd` columns with your own services' real paths — the rows below are placeholders
-illustrating the shape of the table, not literal paths to copy:
+illustrating the shape of the table, not literal paths to copy. The anchors below let tooling
+(e.g. `onboarding-ui/`) regenerate just this table without touching the rest of this file.
 
+<!-- sensor-dispatch-table:start -->
 | File Pattern | Sensor Command | Cwd |
 |---|---|---|
 | `codebase/<service>/src/**/*.py` | `ruff check {file} && pytest -xvs tests/` | `codebase/<service>/` |
@@ -51,6 +53,7 @@ illustrating the shape of the table, not literal paths to copy:
 | `codebase/<iac-module>/**/*.tf` | `terraform fmt -check -recursive && terraform validate` | `codebase/<iac-module>/` |
 | `codebase/<function>/src/**/*.py` | `cd {function_root} && tox -e unit` | `codebase/<function>/` |
 | `codebase/<shared-layer>/**` | Run the test suite in ALL dependent services (check your dependency-map doc) | — |
+<!-- sensor-dispatch-table:end -->
 
 When multiple patterns match (e.g. service src + tests changed), run **all** matching sensors.
 

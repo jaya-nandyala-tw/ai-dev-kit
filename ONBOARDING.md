@@ -9,6 +9,14 @@
 
 ---
 
+> **Prefer a guided UI?** `cd onboarding-ui && npm install && npm run dev` runs a local dashboard
+> that does the steps below for you — diff preview before every file write, live-streamed script
+> output, and a "Recommended Resources" panel that flags what your stack doesn't need. See
+> `onboarding-ui/README.md`. Everything below still applies if you'd rather do it by hand, or want
+> to understand what the dashboard is actually doing.
+
+---
+
 ## What Is This?
 
 This repo is a **Context Engineering framework** that supercharges AI-assisted development across your team's repos. It gives AI coding agents structured knowledge about your architecture, coding patterns, and deployment workflows — so they produce correct, consistent code instead of hallucinating.

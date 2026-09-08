@@ -1,0 +1,180 @@
+import fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import { repoPath } from "./paths";
+import { readState } from "./stateStore";
+import * as T from "./templates";
+import type { OnboardingState, StepStatusEntry } from "@/types";
+
+function exists(relPath: string): boolean {
+  return fs.existsSync(repoPath(relPath));
+}
+
+function read(relPath: string): string {
+  try {
+    return fs.readFileSync(repoPath(relPath), "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function commandExists(cmd: string): boolean {
+  try {
+    execFileSync("which", [cmd], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+type ReposDoc = {
+  github?: { org?: string };
+  repos?: Array<{ name: string; tier: "core" | "worker" }>;
+};
+
+function readReposDoc(): ReposDoc | null {
+  const raw = read("config/repos.json");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ReposDoc;
+  } catch {
+    return null;
+  }
+}
+
+function prerequisites(): StepStatusEntry {
+  const tools = ["git", "node", "python3", "docker", "aws", "gh", "pre-commit"];
+  const missing = tools.filter((t) => !commandExists(t));
+  return {
+    id: "prerequisites",
+    status: missing.length === 0 ? "done" : "partial",
+    detail: missing.length === 0 ? "All checked tools found on PATH" : `Missing: ${missing.join(", ")}`,
+  };
+}
+
+function stackProfile(state: OnboardingState): StepStatusEntry {
+  return { id: "stack-profile", status: state.profile ? "done" : "not-started" };
+}
+
+function reposConfig(): StepStatusEntry {
+  const doc = readReposDoc();
+  const org = doc?.github?.org ?? "";
+  const repos = doc?.repos ?? [];
+  const isPlaceholder = !org || org === "<your-github-org>" || repos.length === 0;
+  return {
+    id: "repos-config",
+    status: isPlaceholder ? "not-started" : "done",
+    detail: isPlaceholder ? "config/repos.json still has placeholder values" : `${repos.length} repo(s) configured`,
+  };
+}
+
+function cloneRepos(reposStatus: StepStatusEntry): StepStatusEntry {
+  if (reposStatus.status !== "done") {
+    return { id: "clone-repos", status: "locked", lockedReason: "Configure repos first" };
+  }
+  const doc = readReposDoc();
+  const repos = doc?.repos ?? [];
+  const cloned = repos.filter((r) => {
+    const dir = r.tier === "worker" ? `codebase/workers/${r.name}` : `codebase/${r.name}`;
+    return exists(dir);
+  });
+  if (repos.length === 0) return { id: "clone-repos", status: "not-started" };
+  if (cloned.length === repos.length) return { id: "clone-repos", status: "done", detail: `${cloned.length}/${repos.length} cloned` };
+  if (cloned.length > 0) return { id: "clone-repos", status: "partial", detail: `${cloned.length}/${repos.length} cloned` };
+  return { id: "clone-repos", status: "not-started" };
+}
+
+function preCommitHooks(): StepStatusEntry {
+  const hook = read(".git/hooks/pre-commit");
+  const installed = hook.includes("pre-commit.com");
+  return { id: "pre-commit-hooks", status: installed ? "done" : "not-started" };
+}
+
+function codeowners(): StepStatusEntry {
+  const current = read("CODEOWNERS");
+  const hasRule = current
+    .split("\n")
+    .some((l) => l.trim() && !l.trim().startsWith("#"));
+  return { id: "codeowners", status: hasRule ? "done" : "not-started" };
+}
+
+function preCommitConfig(): StepStatusEntry {
+  const current = read(".pre-commit-config.yaml");
+  const stillPlaceholder = current.includes("<service>") || current.includes("<lambdas-or-workers>");
+  return { id: "pre-commit-config", status: !current || stillPlaceholder ? "not-started" : "done" };
+}
+
+function ciWorkflow(): StepStatusEntry {
+  const current = read(".github/workflows/ci.yml");
+  const stillTodo = current.includes('echo "TODO: wire up your linter') || current.includes('echo "TODO: wire up your test');
+  return { id: "ci-workflow", status: !current || stillTodo ? "not-started" : "done" };
+}
+
+function sensorTable(): StepStatusEntry {
+  const current = read(".github/instructions/global.instructions.md");
+  const stillPlaceholder = current.includes("<service>/src/**/*.py");
+  return { id: "sensor-table", status: !current || stillPlaceholder ? "not-started" : "done" };
+}
+
+function vscodeWorkspace(reposStatus: StepStatusEntry): StepStatusEntry {
+  if (reposStatus.status !== "done") {
+    return { id: "vscode-workspace", status: "locked", lockedReason: "Configure repos first" };
+  }
+  return { id: "vscode-workspace", status: exists("ai-workspace.code-workspace") ? "done" : "not-started" };
+}
+
+function talisman(): StepStatusEntry {
+  const current = read(".talismanrc");
+  const untouched = !current || /fileignoreconfig:\s*\[\]/.test(current);
+  return { id: "talisman", status: untouched ? "not-started" : "done" };
+}
+
+function jira(state: OnboardingState): StepStatusEntry {
+  if (!state.profile?.usesJira) return { id: "jira", status: "locked", lockedReason: "Not needed for your stack" };
+  const env = read(".env");
+  const hasEnv = /JIRA_BASE_URL=\S/.test(env) && /JIRA_API_TOKEN=\S/.test(env);
+  const my = read("jira_client/fetch_my_stories.py");
+  const hasBoard = /BOARD_ID = [1-9]/.test(my);
+  if (hasEnv && hasBoard) return { id: "jira", status: "done" };
+  if (hasEnv || hasBoard) return { id: "jira", status: "partial" };
+  return { id: "jira", status: "not-started" };
+}
+
+function devProfile(): StepStatusEntry {
+  const env = read(".env");
+  const hasProfile = /^PROFILE=\S/m.test(env);
+  const hasEmail = /^DEV_EMAIL=\S/m.test(env);
+  if (hasProfile && hasEmail) return { id: "dev-profile", status: "done" };
+  if (hasProfile || hasEmail) return { id: "dev-profile", status: "partial" };
+  return { id: "dev-profile", status: "not-started" };
+}
+
+function awsAuth(state: OnboardingState): StepStatusEntry {
+  if (!state.profile?.usesOktaAws) return { id: "aws-auth", status: "locked", lockedReason: "Not needed for your stack" };
+  // Deliberately not a live `aws sts get-caller-identity` call on every status poll (that's a
+  // network round-trip) — status here reflects the last explicit "Verify" click.
+  return { id: "aws-auth", status: state.stepMeta["aws-auth"] ? "done" : "not-started" };
+}
+
+export function computeAllStatuses(): { state: OnboardingState; statuses: Record<string, StepStatusEntry> } {
+  const state = readState();
+  const reposStatus = reposConfig();
+  const entries = [
+    prerequisites(),
+    stackProfile(state),
+    reposStatus,
+    cloneRepos(reposStatus),
+    preCommitHooks(),
+    codeowners(),
+    preCommitConfig(),
+    ciWorkflow(),
+    sensorTable(),
+    vscodeWorkspace(reposStatus),
+    talisman(),
+    jira(state),
+    devProfile(),
+    awsAuth(state),
+  ];
+  const statuses: Record<string, StepStatusEntry> = {};
+  for (const e of entries) statuses[e.id] = e;
+  return { state, statuses };
+}

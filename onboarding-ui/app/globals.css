@@ -1,0 +1,307 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b0d10;
+  --bg-elevated: #101319;
+  --panel: #151922;
+  --panel-hover: #1a1f2a;
+  --border: #262c38;
+  --border-soft: #1d222c;
+  --text: #eef1f6;
+  --muted: #8b94a7;
+  --muted-soft: #5f6779;
+  --accent: #5b8cff;
+  --accent-strong: #7aa2ff;
+  --accent-soft: rgba(91, 140, 255, 0.14);
+  --ok: #35d08c;
+  --ok-soft: rgba(53, 208, 140, 0.14);
+  --warn: #eab54d;
+  --warn-soft: rgba(234, 181, 77, 0.14);
+  --danger: #ef5b64;
+  --danger-soft: rgba(239, 91, 100, 0.14);
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 15% -10%, rgba(91, 140, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(53, 208, 140, 0.05), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Slim, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-soft);
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-elevated) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.panel-flat {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progress-stripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 28px 0;
+  }
+}
+
+.anim-fade-in-up {
+  animation: fade-in-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+.anim-scale-in {
+  animation: scale-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-pop {
+  animation: pop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+  opacity: 0.85;
+}
+
+.running-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(91, 140, 255, 0.35) 0,
+    rgba(91, 140, 255, 0.35) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  animation: progress-stripes 0.9s linear infinite;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: transform 0.12s ease, filter 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none !important;
+}
+.btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  color: white;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 6px 16px -6px rgba(91, 140, 255, 0.55);
+}
+.btn-primary:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.btn-secondary {
+  background: var(--panel-hover);
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn-secondary:not(:disabled):hover {
+  border-color: var(--muted-soft);
+  background: #1e2430;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+}
+.btn-ghost:not(:disabled):hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-danger {
+  background: linear-gradient(180deg, #f16b73, var(--danger));
+  color: white;
+  box-shadow: 0 6px 16px -6px rgba(239, 91, 100, 0.5);
+}
+.btn-danger:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.btn-sm {
+  font-size: 0.76rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+}
+
+/* ── Form controls ─────────────────────────────────────────────────────── */
+
+.field-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.field-input::placeholder {
+  color: var(--muted-soft);
+}
+.field-input:hover {
+  border-color: var(--muted-soft);
+}
+.field-input:focus {
+  border-color: var(--accent);
+  background: #0f131b;
+}
+
+/* ── Card hover affordance (clickable rows/cards) ──────────────────────── */
+
+.card-interactive {
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.card-interactive:hover {
+  border-color: var(--muted-soft);
+  background: var(--panel-hover);
+}
