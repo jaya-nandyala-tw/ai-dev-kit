@@ -98,7 +98,7 @@ export default function StepPage() {
                 min-height:auto, which would otherwise let this grow past the pane instead of
                 scrolling internally. */}
             <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-              {def.kind === "prerequisites" && <PrerequisitesStep status={statuses[stepId]} />}
+              {def.kind === "prerequisites" && <PrerequisitesStep status={statuses[stepId]} onInstalled={refresh} />}
 
               {def.kind === "questionnaire" && <QuestionnaireStep initial={profile} onSaved={refresh} />}
 

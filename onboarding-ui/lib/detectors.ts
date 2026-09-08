@@ -41,9 +41,23 @@ function readReposDoc(): ReposDoc | null {
   }
 }
 
+// Detects either install path GitHub ships Copilot CLI through: the standalone `copilot` binary,
+// or the `gh copilot` extension — neither is a simple PATH lookup for the extension case, so this
+// isn't just another entry in the flat `tools` list below.
+function copilotCliAvailable(): boolean {
+  if (commandExists("copilot")) return true;
+  try {
+    execFileSync("gh", ["copilot", "--version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function prerequisites(): StepStatusEntry {
   const tools = ["git", "node", "python3", "gh", "pre-commit"];
   const missing = tools.filter((t) => !commandExists(t));
+  if (!copilotCliAvailable()) missing.push("copilot");
   return {
     id: "prerequisites",
     status: missing.length === 0 ? "done" : "partial",

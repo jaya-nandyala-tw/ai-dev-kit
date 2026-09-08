@@ -58,7 +58,13 @@ export type DiffResult = {
 
 export type FieldType = "text" | "textarea" | "table" | "checkbox";
 
-export type TableColumn = { name: string; label: string; placeholder?: string };
+export type TableColumn = {
+  name: string;
+  label: string;
+  placeholder?: string;
+  /** Column can be filled via a Copilot CLI suggestion (see GenericFileForm's "✨" affordance). */
+  suggestable?: boolean;
+};
 
 export type FieldSchema = {
   name: string;
@@ -85,3 +91,28 @@ export type RunEvent =
   | { type: "prompt"; runId: string; prompt: string; ts: string }
   | { type: "exit"; runId: string; code: number | null; ts: string }
   | { type: "error"; runId: string; message: string; ts: string };
+
+// ── Acquire / Review Context ────────────────────────────────────────────────
+// A context "item" is a raw, user-pasted dump (meeting notes, a doc export, a runbook) stored as
+// a real file under specs/context/<category>/ — this type/list is safe to import from both
+// client code (apiClient.ts) and server code (lib/contextStore.ts) since it has no Node imports.
+
+export type ContextCategory = "business-workflow" | "tech-guideline" | "domain-glossary" | "team-convention" | "uncategorized";
+
+export const CONTEXT_CATEGORIES: { value: ContextCategory; label: string }[] = [
+  { value: "business-workflow", label: "Business workflow" },
+  { value: "tech-guideline", label: "Tech / architecture guideline" },
+  { value: "domain-glossary", label: "Domain glossary" },
+  { value: "team-convention", label: "Team convention" },
+  { value: "uncategorized", label: "Uncategorized" },
+];
+
+export type ContextItem = {
+  slug: string;
+  title: string;
+  category: ContextCategory;
+  summary: string;
+  createdAt: string;
+  relPath: string;
+  hasDraft: boolean;
+};

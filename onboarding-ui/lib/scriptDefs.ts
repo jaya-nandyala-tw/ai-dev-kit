@@ -48,6 +48,27 @@ const SCRIPTS: Record<string, ScriptDef> = {
     cwd: REPO_ROOT,
     destructive: true,
   },
+  "copilot-install": {
+    label: "Install GitHub Copilot CLI",
+    command: "npm",
+    baseArgs: ["install", "-g", "@github/copilot"],
+    cwd: REPO_ROOT,
+  },
+  // Always invoked via the standalone `copilot` binary, even though detection (lib/detectors.ts)
+  // also accepts the `gh copilot` extension — a static ScriptDef can't branch on which one a
+  // given machine has. Someone with only the `gh` extension installed will show as "ready" in
+  // Prerequisites but this specific action will fail; acceptable v1 scope, not worth a runtime
+  // command-resolution layer for one script. `-s` keeps output to just the response (no extra
+  // usage chrome to strip back out downstream); `--no-ask-user` matters here specifically
+  // because nothing is watching this run to answer an interactive prompt. No `--allow-tool` is
+  // passed on purpose — this is a plain suggestion call, not permission for the agent to take
+  // actions in the repo.
+  "copilot-suggest": {
+    label: "Copilot CLI suggestion",
+    command: "copilot",
+    baseArgs: ["-s", "--no-ask-user", "-p"],
+    cwd: REPO_ROOT,
+  },
 };
 
 export function getScriptDef(key: string): ScriptDef | undefined {

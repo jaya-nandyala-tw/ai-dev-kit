@@ -156,7 +156,7 @@ const globalInstructions: ManagedFileDef = {
       type: "table",
       columns: [
         { name: "pattern", label: "File pattern", placeholder: "codebase/billing-service/src/**/*.py" },
-        { name: "command", label: "Sensor command", placeholder: "ruff check {file} && pytest -xvs tests/" },
+        { name: "command", label: "Sensor command", placeholder: "ruff check {file} && pytest -xvs tests/", suggestable: true },
         { name: "cwd", label: "Cwd", placeholder: "codebase/billing-service/" },
       ],
     },

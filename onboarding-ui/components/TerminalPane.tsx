@@ -8,25 +8,35 @@ import type { RunEvent } from "@/types";
 export function TerminalPane({
   runId,
   onExit,
+  onOutput,
 }: {
   runId: string;
   onExit?: (code: number | null) => void;
+  /** Called once on exit with the concatenated stdout text — for callers that want the run's
+   * final output (e.g. a Copilot suggestion) rather than just watching it happen. */
+  onOutput?: (text: string) => void;
 }) {
   const [lines, setLines] = useState<{ kind: RunEvent["type"]; text: string }[]>([]);
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [exited, setExited] = useState<number | null | "running">("running");
   const scrollRef = useRef<HTMLDivElement>(null);
+  // React state updates inside the streamRun callback are async, so `lines` itself would be
+  // stale by the time an `exit` event arrives in the same effect run — track the raw text here
+  // instead of reading back from state.
+  const stdoutRef = useRef("");
 
   useEffect(() => {
     const stop = streamRun(runId, (event) => {
       if (event.type === "stdout" || event.type === "stderr") {
+        if (event.type === "stdout") stdoutRef.current += event.data;
         setLines((prev) => [...prev, { kind: event.type, text: event.data }]);
       } else if (event.type === "prompt") {
         setPendingPrompt(event.prompt);
       } else if (event.type === "exit") {
         setExited(event.code);
         setPendingPrompt(null);
+        onOutput?.(stdoutRef.current);
         onExit?.(event.code);
       } else if (event.type === "error") {
         setLines((prev) => [...prev, { kind: "stderr", text: `[error] ${event.message}` }]);

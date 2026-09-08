@@ -135,6 +135,14 @@ type GlobalHelpSection =
   | { title: string; icon: string; body: string[] }
   | { title: string; icon: string; guarantees: GlobalHelpGuarantee[] };
 
+// Rendered as its own prominent block at the bottom of the "How this works" dialog, not buried
+// as a bullet in "Where to read more" — direct human help deserves more visibility than a link
+// in a list.
+export const SUPPORT_LINK = {
+  label: "Ask in the onboarding Google Chat space",
+  url: "https://chat.google.com/room/AAQAl5aoau8?cls=7",
+};
+
 export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
   sections: [
     {

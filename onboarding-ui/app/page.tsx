@@ -33,7 +33,9 @@ export default function HomePage() {
             <Hero profile={profile} nextStep={nextStep} doneCount={doneCount} required={required.length} />
             <WhatWhyWho />
             <StoryWorkflow />
+            <GuidingPrinciples />
             <Roadmap required={required} optional={optional} statuses={statuses} />
+            <ContextManagement />
             <ClosingCta profile={profile} nextStep={nextStep} allRequiredDone={Boolean(allRequiredDone)} />
           </div>
         );
@@ -65,15 +67,16 @@ function Hero({
 
   return (
     <section className="panel p-6 sm:p-10 lg:p-14 relative overflow-hidden">
-      {/* Decorative oversized numeral behind the headline — "layered type for depth," the
-          design system's own alternative to shadows/glows. Hidden on mobile so it never forces
-          horizontal scroll on a narrow viewport. */}
+      {/* Decorative oversized wordmark behind the headline — "layered type for depth," the
+          design system's own alternative to shadows/glows. Pulls the other key word straight
+          out of the headline below instead of an arbitrary numeral with nothing to count.
+          Hidden on mobile so it never forces horizontal scroll on a narrow viewport. */}
       <span
         aria-hidden
         className="hidden lg:block absolute -top-8 right-4 mono font-bold pointer-events-none select-none"
-        style={{ fontSize: "12rem", lineHeight: 1, color: "var(--border)", opacity: 0.5 }}
+        style={{ fontSize: "10rem", lineHeight: 1, color: "var(--border)", opacity: 0.5 }}
       >
-        01
+        HARNESS
       </span>
 
       <div className="relative max-w-3xl">
@@ -148,7 +151,7 @@ function Hero({
 const ANSWERS = [
   {
     n: "What",
-    title: "An AI harness accelerator — not another SaaS boilerplate.",
+    title: "An AI harness accelerator",
     body: "Agents, skills, guardrails, and the story lifecycle your team needs for AI-first software delivery: 9 agents, 9 skills, 3 prompts, 1 commit/PR review gate. No product-specific paths or business logic to rip out before it's actually yours.",
   },
   {
@@ -169,16 +172,16 @@ const ANSWERS = [
 
 function WhatWhyWho() {
   return (
-    <section className="py-14 lg:py-20 border-t border-[var(--border-soft)]">
+    <section className="py-14 pl-20 lg:py-20 border-t border-[var(--border-soft)]">
       <div className="space-y-12 lg:space-y-16">
         {ANSWERS.map((a) => (
           <div key={a.n} className="grid lg:grid-cols-12 gap-4 lg:gap-8">
-            <div className="lg:col-span-3">
-              <p className="font-serif italic text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight leading-none" style={{ color: "var(--accent)" }}>
+            <div className="lg:col-span-2">
+              <p className="font-serif italic text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight leading-none" style={{ color: "var(--accent)" }}>
                 {a.n}
               </p>
             </div>
-            <div className="lg:col-span-9">
+            <div className="lg:col-span-10">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight mb-3 max-w-7xl">
                 {a.title}
               </h2>
@@ -222,6 +225,76 @@ function StoryWorkflow() {
       <p className="text-sm text-[var(--muted)] mt-3 max-w-7xl">
         A failed <code className="mono text-xs">@verify</code> pass or an unresolved review
         blocker routes back into the implement loop by name — never re-run as duplicated logic.
+      </p>
+    </section>
+  );
+}
+
+// Condensed from harness-engineering.md's "Principles" section at the repo root — that file also
+// carries Context Rot mitigations and a worked example this section deliberately leaves out, so
+// it stays a quick, scannable reference rather than a duplicate of the full doc.
+const PRINCIPLES = [
+  {
+    title: "Earn each rule",
+    body: "Every instruction must trace to a past failure or hard constraint. Hand-craft rules — never auto-generate them; auto-generated agent files have been shown to hurt performance.",
+  },
+  {
+    title: "Silent success, verbose failure",
+    body: "Sensors produce zero output when things pass. On failure, they surface the exact error so the agent can self-correct.",
+  },
+  {
+    title: "Reference, never duplicate",
+    body: "Your top-level instructions file is a navigation index pointing to specs — not a content wall. Heavy context loads on demand.",
+  },
+  {
+    title: "Sub-agents are context firewalls",
+    body: "Use them for context isolation — a fresh window, a condensed answer handed back to the parent — not role-play personas.",
+  },
+  {
+    title: "Codebase wins over guidelines",
+    body: "When existing code contradicts a guideline, the agent follows the code. The codebase is the source of truth.",
+  },
+  {
+    title: "Structure in, structure out",
+    body: "Real file paths, symbol names, existing patterns to follow — the more constrained the input, the more predictable the output.",
+  },
+  {
+    title: "Promote rules from docs into code",
+    body: "When a documented rule keeps being violated, escalate it to a linter or structural test. Prose is the starting point; mechanical enforcement is the destination.",
+  },
+  {
+    title: "Treat the harness as software",
+    body: "Skills, prompts, instructions, and specs are versioned, reviewed in PRs, and refactored when they drift. A stale prompt rots like a stale test.",
+  },
+];
+
+function GuidingPrinciples() {
+  return (
+    <section className="py-14 lg:py-20 border-t border-[var(--border-soft)]">
+      <p className="label-micro mb-2">Why this exists</p>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 max-w-7xl">The rules this harness is actually built on.</h2>
+      <p className="text-base text-[var(--muted)] max-w-7xl mb-8">
+        Every agent, skill, and guardrail in this kit traces back to one of these eight
+        principles — not aspirational copy, the actual editorial bar new agents, skills, and
+        instructions get held to before they ship.
+      </p>
+
+      <ol className="divide-y divide-[var(--border-soft)] border-y px-16 border-[var(--border-soft)]">
+        {PRINCIPLES.map((p, i) => (
+          <li key={p.title} className="flex gap-4 sm:gap-6 py-6">
+            <span className="mono text-2xl sm:text-3xl font-bold shrink-0 w-10" style={{ color: "var(--border)" }}>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div>
+              <h3 className="text-lg font-bold tracking-tight mb-1.5">{p.title}</h3>
+              <p className="text-sm text-[var(--muted)] max-w-7xl">{p.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <p className="mono text-xs text-[var(--muted-soft)] mt-8">
+        Full methodology write-up and context-rot mitigations: harness-engineering.md at the repo root.
       </p>
     </section>
   );
@@ -292,6 +365,50 @@ function RoadmapRow({
   );
 }
 
+const CONTEXT_FLOW = [
+  { n: "01", label: "Acquire", body: "Paste anything — meeting notes, a doc export, a runbook. No categorization required up front." },
+  { n: "02", label: "Categorize", body: "Business workflow, tech guideline, domain glossary, or team convention — a human always confirms it." },
+  { n: "03", label: "Generate", body: "Draft a real spec from it with Copilot CLI, review the output, then save it." },
+];
+
+function ContextManagement() {
+  return (
+    <section className="py-14 lg:py-20 border-t border-[var(--border-soft)]">
+      <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="lg:col-span-7">
+          <p className="label-micro mb-2">Continuous, not one-time</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 max-w-2xl">Turn raw context into real specs.</h2>
+          <p className="text-base text-[var(--muted)] max-w-2xl mb-6">
+            Setup is a one-time flow, but your team's context never stops arriving. Acquire &amp;
+            review context is a standalone page you come back to any time — everything lands as
+            plain files under <code className="mono text-xs">specs/</code>, not a database bolted
+            onto the side of this app.
+          </p>
+          <Link href="/context">
+            <Button variant="primary">Acquire context →</Button>
+          </Link>
+        </div>
+
+        <div className="lg:col-span-5">
+          <ol className="space-y-4">
+            {CONTEXT_FLOW.map((s) => (
+              <li key={s.n} className="flex gap-4 border-t pt-4" style={{ borderColor: "var(--border-soft)" }}>
+                <span className="mono text-sm font-bold shrink-0" style={{ color: "var(--accent)" }}>
+                  {s.n}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">{s.label}</p>
+                  <p className="text-sm text-[var(--muted)]">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ClosingCta({
   profile,
   nextStep,
@@ -301,41 +418,48 @@ function ClosingCta({
   nextStep: ReturnType<typeof getVisibleSteps>[number] | undefined;
   allRequiredDone: boolean;
 }) {
-  // Inverted band — the design system's specified "final CTA" treatment: background and
-  // foreground swap, a deliberate full stop after an otherwise dark page.
+  // The loud inverted band — background/foreground swap, "final CTA" treatment — is reserved
+  // for the one moment that's actually a full stop: every required step done. Mid-flow, the
+  // message is calm ("keep going whenever you're ready"), so it gets the same low-key section
+  // treatment as the rest of the page instead of being forced into a high-contrast band that
+  // fights the tone of its own copy.
+  if (!allRequiredDone) {
+    return (
+      <section className="py-14 lg:py-20 border-t border-[var(--border-soft)]">
+        <p className="label-micro mb-2">Ready when you are</p>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 max-w-2xl">Keep going whenever you're ready.</h2>
+        <p className="text-base text-[var(--muted)] max-w-lg mb-6">
+          Every write shows a diff first. Every script run shows the exact command first. You're
+          always one explicit click from the next real change.
+        </p>
+        {!profile ? (
+          <Link href="/steps/stack-profile">
+            <Button variant="primary">Start the guided setup →</Button>
+          </Link>
+        ) : nextStep ? (
+          <Link href={`/steps/${nextStep.id}`}>
+            <Button variant="primary">Continue: {nextStep.title} →</Button>
+          </Link>
+        ) : null}
+      </section>
+    );
+  }
+
   return (
     <section className="border-t border-[var(--border-soft)] p-8 sm:p-12 lg:p-16" style={{ background: "var(--text)", color: "var(--bg)" }}>
       <div className="max-w-7xl">
         <p className="mono text-xs uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
-          {allRequiredDone ? "Nearly there" : "Ready when you are"}
+          Nearly there
         </p>
-        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none mb-5">
-          {allRequiredDone ? "Trim what you don't need." : "Nothing here happens without you clicking it."}
-        </h2>
+        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none mb-5">Trim what you don't need.</h2>
         <p className="text-base opacity-70 mb-8 max-w-lg">
-          {allRequiredDone
-            ? "Every remaining agent, skill, and script gets checked against your stack answers — remove what doesn't apply, keep everything you use."
-            : "Every write shows a diff first. Every script run shows the exact command first. You're always one explicit click from the next real change."}
+          Every remaining agent, skill, and script gets checked against your stack answers — remove what doesn't apply, keep everything you use.
         </p>
-        {allRequiredDone ? (
-          <Link href="/recommendations">
-            <Button variant="secondary" className="btn-on-light">
-              Review recommended resources →
-            </Button>
-          </Link>
-        ) : !profile ? (
-          <Link href="/steps/stack-profile">
-            <Button variant="secondary" className="btn-on-light">
-              Start the guided setup →
-            </Button>
-          </Link>
-        ) : nextStep ? (
-          <Link href={`/steps/${nextStep.id}`}>
-            <Button variant="secondary" className="btn-on-light">
-              Continue: {nextStep.title} →
-            </Button>
-          </Link>
-        ) : null}
+        <Link href="/recommendations">
+          <Button variant="secondary" className="btn-on-light">
+            Review recommended resources →
+          </Button>
+        </Link>
       </div>
     </section>
   );

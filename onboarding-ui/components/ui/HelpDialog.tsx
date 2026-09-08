@@ -88,7 +88,7 @@ export function HelpList({ items }: { items: React.ReactNode[] }) {
   return (
     <ul className="space-y-2.5">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-[var(--muted)]">
+        <li key={i} className="flex gap-2.5 text-base leading-relaxed text-[var(--muted)]">
           <span className="mono shrink-0" style={{ color: "var(--muted-soft)" }}>
             →
           </span>
@@ -106,7 +106,7 @@ export function HelpIconList({ items }: { items: { icon: string; text: React.Rea
   return (
     <ul className="space-y-3">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-3 text-sm leading-relaxed text-[var(--muted)]">
+        <li key={i} className="flex gap-3 text-base leading-relaxed text-[var(--muted)]">
           <span
             className="w-7 h-7 border flex items-center justify-center shrink-0 text-sm"
             style={{ borderColor: "var(--border-soft)", background: "var(--bg-elevated)" }}

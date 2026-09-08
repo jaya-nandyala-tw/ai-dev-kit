@@ -12,7 +12,7 @@ const LINKS: { href: string; label: string; isActive: (pathname: string) => bool
     label: "Setup",
     isActive: (p) => p.startsWith("/steps") || p.startsWith("/recommendations"),
   },
-  { href: "/principles", label: "Guiding principles", isActive: (p) => p.startsWith("/principles") },
+  { href: "/context", label: "Context", isActive: (p) => p.startsWith("/context") },
 ];
 
 // Sticky, every page (mounted once in layout.tsx below the local-only warning banner). "Setup"

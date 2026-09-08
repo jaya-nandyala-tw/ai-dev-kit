@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 import { HelpDialog, HelpIconList, HelpList, HelpSection } from "@/components/ui/HelpDialog";
-import { GLOBAL_HELP } from "@/lib/helpContent";
+import { GLOBAL_HELP, SUPPORT_LINK } from "@/lib/helpContent";
 
 const HelpContext = createContext<(() => void) | null>(null);
 
@@ -22,6 +22,22 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
             {"guarantees" in section ? <HelpIconList items={section.guarantees} /> : <HelpList items={section.body} />}
           </HelpSection>
         ))}
+
+        <a
+          href={SUPPORT_LINK.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between gap-3 p-4 border transition-colors hover:border-[var(--accent)]"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <span className="flex items-center gap-3">
+            <span className="text-xl leading-none">💬</span>
+            <span className="text-base font-semibold">{SUPPORT_LINK.label}</span>
+          </span>
+          <span className="mono text-xs" style={{ color: "var(--accent)" }}>
+            Open ↗
+          </span>
+        </a>
       </HelpDialog>
     </HelpContext.Provider>
   );

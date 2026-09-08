@@ -31,15 +31,18 @@ const config: Config = {
         "9xl": ["10rem", { lineHeight: "0.9", letterSpacing: "-0.06em" }],
       },
       // Tracking scale — used via the existing `tracking-*` utilities everywhere (headlines get
-      // `tracking-tighter`/`tight`, labels get `wide`/`wider`/`widest`). tighter/tight are
-      // dialed back from the original Bold Typography spec values (-0.06em/-0.04em): most
-      // `tracking-tight` headings in this app sit at text-base–text-2xl (dialog titles, step
-      // headers, section titles), not true poster scale, where that much tightening reads as
-      // cramped rather than editorial. Real poster-scale headlines (fontSize 4xl–9xl below)
-      // carry their own larger, size-appropriate letterSpacing bundled in, independent of this.
+      // `tracking-tight`, labels get `wide`/`wider`/`widest`). Dialed back twice now from the
+      // original Bold Typography spec values (tight was -0.04em, then -0.02em): `tracking-tight`
+      // is a plain utility class, so on any element that also carries a `text-4xl`..`text-9xl`
+      // size class (the Hero H1, etc.), it doesn't layer on top of — it *overrides* — that size's
+      // own bundled letterSpacing below, because both compile to plain `.class{letter-spacing:…}`
+      // rules and Tailwind emits letterSpacing utilities after fontSize ones. So `tracking-tight`
+      // is really the letter-spacing every heading in this app gets, poster-scale hero included,
+      // not just the smaller dialog/section titles — and even -0.02em still read as cramped at
+      // 6xl/7xl sizes, where an em-based value turns into several real pixels of tightening.
       letterSpacing: {
-        tighter: "-0.03em",
-        tight: "-0.02em",
+        tighter: "-0.015em",
+        tight: "-0.01em",
         normal: "0em",
         wide: "0.05em",
         wider: "0.1em",
