@@ -20,7 +20,7 @@ set -euo pipefail
 #
 # Repos are cloned into codebase/ and are gitignored — only speckits and AI context are
 # tracked in this repo. config/repos.json IS tracked: it's the one file to edit to change
-# what gets cloned, pulled, and shown in the VS Code workspace.
+# what gets cloned and pulled.
 # ============================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

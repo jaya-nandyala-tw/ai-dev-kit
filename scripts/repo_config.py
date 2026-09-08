@@ -3,9 +3,9 @@
 repo_config.py — single reader for config/repos.json.
 
 This is the one place that knows the shape of config/repos.json. Every other
-script either imports this module (workspace.py, select-repos.py) or shells
-out to it as a CLI (clone-repos.sh, pull-all.sh — both bash, kept dependency-free
-by going through python3 rather than requiring jq).
+script either imports this module (select-repos.py) or shells out to it as a
+CLI (clone-repos.sh, pull-all.sh — both bash, kept dependency-free by going
+through python3 rather than requiring jq).
 
 CLI usage:
   repo_config.py org             # github.org value
@@ -50,18 +50,6 @@ def org(cfg=None):
 def protocol(cfg=None):
     cfg = cfg or load()
     return cfg.get("github", {}).get("protocol", "ssh")
-
-
-def groups(cfg=None):
-    """Return {group_name: {"desc": str, "workers": [repo_name, ...]}} — matches the
-    shape workspace.py's WORKER_GROUPS used to be hand-maintained as."""
-    cfg = cfg or load()
-    result = {name: {"desc": desc, "workers": []} for name, desc in cfg.get("groups", {}).items()}
-    for r in cfg.get("repos", []):
-        if r.get("tier") == "worker" and r.get("group"):
-            result.setdefault(r["group"], {"desc": r["group"], "workers": []})
-            result[r["group"]]["workers"].append(r["name"])
-    return result
 
 
 def all_paths(cfg=None):

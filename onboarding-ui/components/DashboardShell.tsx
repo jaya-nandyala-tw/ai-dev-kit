@@ -32,7 +32,7 @@ export function DashboardShell({
   }, [refresh]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[360px_1fr] gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-[22.5rem_1fr] gap-6">
       <Stepper statuses={statuses} profile={profile} />
       <main>{loaded ? children({ profile, statuses, refresh }) : <p className="text-[var(--muted)]">Loading…</p>}</main>
     </div>

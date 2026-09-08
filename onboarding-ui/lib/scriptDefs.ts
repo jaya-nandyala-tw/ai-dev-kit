@@ -41,24 +41,6 @@ const SCRIPTS: Record<string, ScriptDef> = {
     baseArgs: ["-i"],
     cwd: REPO_ROOT,
   },
-  workspace: {
-    label: "Toggle VS Code workspace visibility",
-    command: "bash",
-    baseArgs: [`${REPO_ROOT}/scripts/workspace.sh`],
-    cwd: REPO_ROOT,
-  },
-  profile: {
-    label: "Apply a dev environment profile",
-    command: "bash",
-    baseArgs: [`${REPO_ROOT}/scripts/profile.sh`],
-    cwd: REPO_ROOT,
-  },
-  "aws-verify": {
-    label: "Verify AWS CLI credentials",
-    command: "aws",
-    baseArgs: ["sts", "get-caller-identity"],
-    cwd: REPO_ROOT,
-  },
   "git-rm": {
     label: "Remove files not needed for your stack",
     command: "git",

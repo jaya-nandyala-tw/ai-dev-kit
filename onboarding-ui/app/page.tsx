@@ -82,7 +82,7 @@ export default function HomePage() {
                   <div>
                     <p className="text-sm font-medium mb-0.5">🧹 Trim what you don't need</p>
                     <p className="text-xs text-[var(--muted)]">
-                      See which agents/skills/plugins/scripts don't apply to your stack.
+                      See which agents/skills/scripts don't apply to your stack.
                     </p>
                   </div>
                   <span className="text-[var(--muted)]">→</span>

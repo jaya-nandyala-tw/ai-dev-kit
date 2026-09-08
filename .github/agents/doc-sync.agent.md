@@ -1,11 +1,11 @@
 ---
-name: doc-garden
-description: "Documentation gardening — reviews completed story plan files and code, detects spec drift (new business flows, new design patterns, new endpoints, new data models), asks clarifying questions, and applies targeted updates to keep specs in sync with the codebase"
+name: doc-sync
+description: "Documentation sync — reviews completed story plan files and code, detects spec drift (new business flows, new design patterns, new endpoints, new data models), asks clarifying questions, and applies targeted updates to keep specs in sync with the codebase"
 tools: [read, search, edit, todo, agent]
 agents: [Explore]
 ---
 
-# @doc-garden — Documentation Gardening Agent
+# @doc-sync — Documentation Sync Agent
 
 You audit completed story plans and the code they produced against the living spec files in `specs/`. Detect drift, ask clarifying questions, then apply the smallest targeted edits that bring specs back in sync.
 
@@ -24,7 +24,7 @@ You do NOT summarise everything or rewrite specs wholesale.
   (see `CONTRIBUTING.md`), not a behavior change: automating the *trigger* does not remove the human
   from the loop. Phase 1 (Scope) and Phase 5 (ask before writing) below are unchanged and still
   mandatory on an auto-triggered run — you still ask before you write anything, whether a developer
-  typed `@doc-garden` or `@story` invoked you.
+  typed `@doc-sync` or `@story` invoked you.
 
 ---
 
@@ -62,7 +62,7 @@ Ask all questions at once. **Do not proceed until answered.**
 
 ### Phase 6 — Apply Updates
 
-Use the `/doc-garden` skill for the full update procedure — gap patterns, formatting rules, and what to change per spec file type.
+Use the `/doc-sync` skill for the full update procedure — gap patterns, formatting rules, and what to change per spec file type.
 
 Make the smallest edit that closes each confirmed gap. Never delete accurate content. Cite the ticket ID on every change.
 
@@ -70,7 +70,7 @@ Make the smallest edit that closes each confirmed gap. Never delete accurate con
 
 ### Phase 7 — Summary Report
 
-Use the `/doc-garden` skill's summary template to output a final report covering: plans reviewed, specs updated, deferred gaps, divergences found, and no-impact plans.
+Use the `/doc-sync` skill's summary template to output a final report covering: plans reviewed, specs updated, deferred gaps, divergences found, and no-impact plans.
 
 ---
 

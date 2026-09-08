@@ -35,8 +35,11 @@ This repo is a **Context Engineering framework** that supercharges AI-assisted d
 | Git + SSH key for GitHub | `ssh-keygen` → add to GitHub Settings → SSH Keys |
 | Container runtime (Docker Desktop / Colima / Podman) | See [System Dependencies → Container Runtime](#container-runtime) |
 | Node.js / Python / whatever your stack needs | Fill in your own versions |
-| AWS CLI + your SSO auth CLI (if applicable) | `brew install awscli okta-awscli` |
 | GitHub CLI (`gh`) — optional, only for `./scripts/clone-repos.sh --select` | `brew install gh` then `gh auth login` |
+
+> This kit deliberately doesn't cover your team's local dev experience (cloud auth, environment
+> profiles, IDE workspace setup) — bring your own tooling for that. It's scoped to the AI harness:
+> agents, skills, guardrails, and the story lifecycle below.
 
 ---
 
@@ -97,23 +100,6 @@ git config --global user.name  "Your Name"
 git config --global user.email "you@<your-company>.com"
 ```
 
-### AWS CLI v2 + your SSO auth CLI (if you deploy to AWS)
-
-```bash
-brew install awscli okta-awscli
-
-aws --version
-okta-awscli --version
-```
-
-To authenticate and select your IAM role:
-
-```bash
-./scripts/aws-auth.sh
-```
-
-This prompts for MFA, fetches all roles available in your SAML assertion grouped by environment, and writes credentials to `~/.aws/credentials` under the profile configured in `scripts/aws-auth.sh`.
-
 ### Terraform (if you work on IaC)
 
 ```bash
@@ -132,7 +118,7 @@ pre-commit --version
 ### Quick Version Check
 
 ```bash
-node --version && python3 --version && docker --version && git --version && aws --version
+node --version && python3 --version && docker --version && git --version
 ```
 
 ---
@@ -152,7 +138,7 @@ cd <this-repo-name>
 cp .env.template .env
 ```
 
-Edit `.env` and fill in your own identity/AWS settings — everything else should have sensible defaults for local dev.
+Edit `.env` and fill in your own identity settings (e.g. `DEV_EMAIL`) — everything else should have sensible defaults for local dev.
 
 ### Step 3: Install Pre-commit Hooks
 
@@ -165,9 +151,9 @@ This activates automatic lint/typecheck/security checks before every commit. Hoo
 
 ### Step 4: Clone Code Repos
 
-First, tell the harness which repos exist. Everything — cloning, daily pulls, and what shows up in
-the VS Code workspace — reads from **one file**: `config/repos.json`. You never need to touch
-`scripts/clone-repos.sh`, `scripts/pull-all.sh`, or `scripts/workspace.py` themselves.
+First, tell the harness which repos exist. Everything — cloning and daily pulls — reads from **one
+file**: `config/repos.json`. You never need to touch `scripts/clone-repos.sh` or
+`scripts/pull-all.sh` themselves.
 
 **Option A — populate it via GitHub CLI (recommended):**
 
@@ -190,17 +176,15 @@ You can also pull from a GitHub Project (v2) board instead of a whole org:
 ```json
 {
   "github": { "org": "your-github-org", "protocol": "ssh" },
-  "groups": { "messaging": "Notification and messaging workers" },
   "repos": [
     { "name": "billing-service", "tier": "core" },
-    { "name": "notifications-worker", "tier": "worker", "group": "messaging" }
+    { "name": "notifications-worker", "tier": "worker" }
   ]
 }
 ```
 
-- `tier: "core"` → always cloned, into `codebase/<name>`, and always visible in the VS Code workspace.
-- `tier: "worker"` → cloned into `codebase/workers/<name>` unless `--core-only` is passed; grouped
-  under `groups` for the workspace visibility toggle (see below).
+- `tier: "core"` → always cloned, into `codebase/<name>`.
+- `tier: "worker"` → cloned into `codebase/workers/<name>` unless `--core-only` is passed.
 
 Either way you end up with a filled-in `config/repos.json`. Then clone:
 
@@ -217,29 +201,34 @@ the new one (it merges into the existing file, it doesn't replace it), or add on
 **Removing a repo:** delete its entry from `config/repos.json`. It won't be re-cloned or pulled; the
 folder on disk is left alone (delete `codebase/<name>` yourself if you want it gone entirely).
 
-**The three things `config/repos.json` drives, concretely:**
+**The two things `config/repos.json` drives, concretely:**
 
 | Concern | Script | Behavior |
 |---|---|---|
 | What gets cloned | `clone-repos.sh` | Every `tier:"core"` repo, plus `tier:"worker"` repos unless `--core-only` |
 | What gets kept up to date | `pull-all.sh` | Every repo listed, at its `codebase/<name>` or `codebase/workers/<name>` path |
-| What's visible in VS Code | `workspace.py` (via `workspace.sh`) | Core repos always; worker repos toggled per `group` — `./scripts/workspace.sh group messaging`, `core`, or `reset` |
 
 ### Step 5: Open the Workspace
+
+This kit doesn't ship an `ai-workspace.code-workspace` file — write your own multi-root VS Code
+workspace with a folder entry per repo in `config/repos.json` plus this repo's root (so
+`.github/` is in a workspace root and its path-scoped instructions actually load). Then:
 
 ```bash
 code ai-workspace.code-workspace
 ```
 
-This opens a **multi-root workspace** with all repos organized into logical groups. VS Code will prompt you to install recommended extensions — accept all.
+VS Code will prompt you to install recommended extensions — accept all.
 
 ### Step 6: Start Local Dev
 
-This starter kit doesn't ship a `start.sh` — it's too specific to any one stack's runtime config to extract generically. Write your own that starts your database, mocks, and services, and wire it up the way `scripts/stop.sh` (included) expects: same docker-compose service names, same local ports.
+This starter kit doesn't ship a `start.sh`/`stop.sh` — local runtime startup (database, mocks,
+services) is too specific to any one stack to extract generically, and it's the kind of local dev
+experience this kit deliberately leaves to your own tooling. Write your own.
 
 ### Step 7: Verify It Works
 
-Fill in your own local URLs (UI, API docs, auth) once `start.sh` exists.
+Fill in your own local URLs (UI, API docs, auth) once you have a start script.
 
 > ⚠️ **Never add `git commit`, `git push`, or `terraform apply` to an agent auto-approve
 > allowlist.** Story mode's commit/PR review gate (`story-mode-review-gate.instructions.md`) has no
@@ -273,13 +262,13 @@ Invoke agents in your agent's chat with `@agent-name`. For the full story delive
 |---|---|---|
 | `@ask` | Answer codebase questions | *"How does approval work end to end?"* |
 | `@story` | Runs the full story lifecycle as a loop controller — intake through close | *"Plan TICKET-1234: add cost center validation to workspace creation"* |
-| `@groom` | Intake, ticket fetch, request classification, and interrogation — invoked automatically by `@story` at the start of a new story, not usually typed directly | *(you'll see `@groom` run before a plan exists — that's expected, not a separate step you trigger yourself)* |
+| `@intake` | Intake, ticket fetch, request classification, and interrogation — invoked automatically by `@story` at the start of a new story, not usually typed directly | *(you'll see `@intake` run before a plan exists — that's expected, not a separate step you trigger yourself)* |
 | `@implement` | Makes the edit for exactly one approved task — invoked by `@story`'s implementation loop, one call per task. Refuses to run if the plan isn't approved yet | *(also not typed directly — `@story` calls it per task automatically)* |
 | `@git` | Manage branches and PRs | *"Create feature branches for TICKET-1234 across services and IaC"* |
 | `@test` | Generate tests | *"Write tests for the new approval endpoint"* |
 | `@verify` | Validate story completion | *"Verify TICKET-1234 is done against acceptance criteria"* |
 | `@orchestrator` | Route multi-domain tasks | *"Implement TICKET-1234 end-to-end across UI, service, and workers"* |
-| `@doc-garden` | Keep specs in sync — also auto-triggered by `@story` at story close if any spec file was touched | *"Specs are drifting — update them for the changes I just shipped"* |
+| `@doc-sync` | Keep specs in sync — also auto-triggered by `@story` at story close if any spec file was touched | *"Specs are drifting — update them for the changes I just shipped"* |
 
 ### Tips for Effective Agent Use
 
@@ -287,7 +276,7 @@ Invoke agents in your agent's chat with `@agent-name`. For the full story delive
 2. **Be specific about scope** — any stack-specific scope question (e.g. toggle scope) matters for file placement
 3. **Let agents read specs** — they'll reference `specs/` files for accurate context
 4. **Just start with `@story`** — it owns the whole lifecycle now and delegates internally
-   (`@groom` for intake, `@implement` per task, `@test`/`@git`/`@verify`/`@doc-garden` as each
+   (`@intake` at the start, `@implement` per task, `@test`/`@git`/`@verify`/`@doc-sync` as each
    phase needs them). You don't drive those sub-agents yourself in the normal flow, and two of
    them will refuse to run out of order on purpose: `@implement` won't touch code before the plan
    is approved, and `@git` won't push or open a PR before the story reaches close.
@@ -306,7 +295,7 @@ Skills are reusable workflows for common tasks. Your agent invokes them automati
 | `address-pr-comments` | *"Address PR review comments"* | Fix or reply drafts for each review comment |
 | `grill-me` | *"Grill me on this plan"* | Relentless design interview to stress-test decisions |
 | `handoff` | *"Hand off this session"* | Compact context doc for the next agent |
-| `doc-garden` | *"Update docs"* / *"Specs are drifting"* | Targeted spec updates to match codebase |
+| `doc-sync` | *"Update docs"* / *"Specs are drifting"* | Targeted spec updates to match codebase |
 | `epic-drift-check` | (invoked automatically by agents) | Propagate a changed decision to sibling stories under the same epic |
 | `generate-test-suite` | *"Generate a test suite for..."* | TSV test cases for your manual QA spreadsheet |
 
@@ -351,21 +340,6 @@ To use: open your agent's chat → type `/` → select the prompt template.
 
 ---
 
-## Workspace Management
-
-Control which repos are visible in VS Code (only useful once you have several worker/lambda repos — see `scripts/workspace.py`):
-
-```bash
-./scripts/workspace.sh                        # Interactive picker
-./scripts/workspace.sh group example-group    # Show only one worker domain group
-./scripts/workspace.sh core                   # Core services only
-./scripts/workspace.sh reset                  # Show everything
-```
-
-Groups come from the `groups` map in `config/repos.json` — see Step 4 above to add or rename one.
-
----
-
 ## Daily Workflow
 
 ```
@@ -376,7 +350,7 @@ Groups come from the `groups` map in `config/repos.json` — see Step 4 above to
 5. Code with AI           →  agent auto-loads context per file
 6. Test                   →  @test "Write tests for <what you built>"
 7. Branch & PR            →  @git "Create PRs for TICKET-XXXX"
-8. Stop                   →  ./scripts/stop.sh
+8. Stop                   →  (your own stop script)
 ```
 
 ---
@@ -405,14 +379,13 @@ Specs in `specs/` are the AI's source of truth. When you ship a feature, update 
 | DB won't start | `docker compose down -v && docker compose up db -d` (fill in your own service name) |
 | Agent gives wrong patterns | Ensure you opened the `.code-workspace` file (not individual folders) |
 | Agent doesn't load context | Close and reopen the workspace file; ensure `.github/instructions/` exists |
-| AWS auth fails | Run `./scripts/aws-auth.sh` — MFA + role picker writes fresh credentials to `~/.aws/credentials` |
 
 ---
 
 ## FAQ
 
 **Q: Do I need every worker/lambda repo cloned?**
-A: No. Use `./scripts/clone-repos.sh --core-only` or `./scripts/workspace.sh` to scope down. Clone only what you need.
+A: No. Use `./scripts/clone-repos.sh --core-only` to scope down. Clone only what you need.
 
 **Q: Can I use my own VS Code settings?**
 A: Yes. The workspace file only adds folder roots and recommended extensions. Your user settings are preserved.

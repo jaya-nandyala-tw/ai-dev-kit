@@ -24,19 +24,19 @@ Open http://localhost:3000.
 
 ## What it does
 
-- **Tell us about your stack** — a short questionnaire that determines which of the steps below
-  and which agents/skills/plugins/scripts in this kit actually apply to your team.
+- **Tell us about your stack** — a short questionnaire (workers? IaC? Jira?) that determines which
+  of the steps below and which agents/skills/scripts in this kit actually apply to your team.
 - **Configure & clone repos** — a native repo picker backed by the `gh` CLI, writing
   `config/repos.json` and then running `scripts/clone-repos.sh` with live streamed output.
 - **CODEOWNERS, pre-commit config, CI workflow, Sensor Dispatch Table** — structured forms with a
   diff preview before every write. If a file was already hand-edited (no longer matches the
   shipped placeholder), the write requires an extra confirmation and a `.bak-<timestamp>` copy is
   made first.
-- **Pre-commit hooks, Talisman, VS Code workspace, dev profiles** — one-click actions that run
-  the real scripts and stream their output, with an inline input box for any prompt they emit.
-- **AWS auth** — guided, not automated: Okta MFA can't be safely piped headlessly, so this step
-  shows the command to run yourself plus a safe, non-interactive "Verify" action.
-- **Recommended Resources** — flags agents/skills/plugins/instructions/scripts that don't apply
+- **Pre-commit hooks, Talisman** — one-click actions that run the real scripts and stream their
+  output, with an inline input box for any prompt they emit.
+- **Jira integration** (only shown if your stack uses Jira) — board ID, project key, base URL, and
+  API token for `jira_client/`.
+- **Recommended Resources** — flags agents/skills/instructions/scripts that don't apply
   to your stack (e.g. `jira_client/` if you don't use Jira, `lambdas.instructions.md` if you have
   no workers) and lets you remove them via `git rm` (reversible pre-commit via `git status`/
   `git checkout`, since nothing here is destructive until you actually commit).

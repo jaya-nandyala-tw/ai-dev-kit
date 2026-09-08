@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Pulls latest for every repo listed in config/repos.json — the same single
-# source of truth clone-repos.sh and workspace.py read. Edit config/repos.json
+# source of truth clone-repos.sh reads. Edit config/repos.json
 # (by hand or via ./scripts/clone-repos.sh --select) to change what this pulls.
 
 WORKSPACE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

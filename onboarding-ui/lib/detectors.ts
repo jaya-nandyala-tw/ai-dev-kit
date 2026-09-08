@@ -42,7 +42,7 @@ function readReposDoc(): ReposDoc | null {
 }
 
 function prerequisites(): StepStatusEntry {
-  const tools = ["git", "node", "python3", "docker", "aws", "gh", "pre-commit"];
+  const tools = ["git", "node", "python3", "gh", "pre-commit"];
   const missing = tools.filter((t) => !commandExists(t));
   return {
     id: "prerequisites",
@@ -115,13 +115,6 @@ function sensorTable(): StepStatusEntry {
   return { id: "sensor-table", status: !current || stillPlaceholder ? "not-started" : "done" };
 }
 
-function vscodeWorkspace(reposStatus: StepStatusEntry): StepStatusEntry {
-  if (reposStatus.status !== "done") {
-    return { id: "vscode-workspace", status: "locked", lockedReason: "Configure repos first" };
-  }
-  return { id: "vscode-workspace", status: exists("ai-workspace.code-workspace") ? "done" : "not-started" };
-}
-
 function talisman(): StepStatusEntry {
   const current = read(".talismanrc");
   const untouched = !current || /fileignoreconfig:\s*\[\]/.test(current);
@@ -139,22 +132,6 @@ function jira(state: OnboardingState): StepStatusEntry {
   return { id: "jira", status: "not-started" };
 }
 
-function devProfile(): StepStatusEntry {
-  const env = read(".env");
-  const hasProfile = /^PROFILE=\S/m.test(env);
-  const hasEmail = /^DEV_EMAIL=\S/m.test(env);
-  if (hasProfile && hasEmail) return { id: "dev-profile", status: "done" };
-  if (hasProfile || hasEmail) return { id: "dev-profile", status: "partial" };
-  return { id: "dev-profile", status: "not-started" };
-}
-
-function awsAuth(state: OnboardingState): StepStatusEntry {
-  if (!state.profile?.usesOktaAws) return { id: "aws-auth", status: "locked", lockedReason: "Not needed for your stack" };
-  // Deliberately not a live `aws sts get-caller-identity` call on every status poll (that's a
-  // network round-trip) — status here reflects the last explicit "Verify" click.
-  return { id: "aws-auth", status: state.stepMeta["aws-auth"] ? "done" : "not-started" };
-}
-
 export function computeAllStatuses(): { state: OnboardingState; statuses: Record<string, StepStatusEntry> } {
   const state = readState();
   const reposStatus = reposConfig();
@@ -168,11 +145,8 @@ export function computeAllStatuses(): { state: OnboardingState; statuses: Record
     preCommitConfig(),
     ciWorkflow(),
     sensorTable(),
-    vscodeWorkspace(reposStatus),
     talisman(),
     jira(state),
-    devProfile(),
-    awsAuth(state),
   ];
   const statuses: Record<string, StepStatusEntry> = {};
   for (const e of entries) statuses[e.id] = e;

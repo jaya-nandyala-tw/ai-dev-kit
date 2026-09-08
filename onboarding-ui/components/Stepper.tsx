@@ -24,6 +24,11 @@ export function Stepper({
   const required = visible.filter((s) => s.group === "required");
   const optional = visible.filter((s) => s.group === "optional");
   const doneCount = required.filter((s) => statuses[s.id]?.status === "done").length;
+  const optionalDoneCount = optional.filter((s) => statuses[s.id]?.status === "done").length;
+
+  // Collapsed by default — but if you're already looking at (or navigated straight to) an
+  // optional step, don't hide the thing you're standing on.
+  const [optionalOpen, setOptionalOpen] = useState(() => optional.some((s) => pathname === `/steps/${s.id}`));
 
   async function restart() {
     setRestarting(true);
@@ -46,19 +51,38 @@ export function Stepper({
       </div>
 
       <Timeline title="Setup" steps={required} statuses={statuses} pathname={pathname} />
-      {optional.length > 0 && (
-        <Timeline title="Optional for your stack" steps={optional} statuses={statuses} pathname={pathname} />
-      )}
 
       <Link
         href="/recommendations"
-        className={`card-interactive flex items-center gap-2 mt-2 px-3 py-2.5 rounded-[10px] text-sm border ${
+        className={`card-interactive flex items-center gap-2 mt-2 mb-4 px-3 py-2.5 rounded-[10px] text-sm border ${
           pathname === "/recommendations" ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)]"
         }`}
       >
         <span>🧹</span>
         <span>Recommended Resources</span>
       </Link>
+
+      {optional.length > 0 && (
+        <div className="border-t border-[var(--border-soft)] pt-3 mb-1">
+          <button
+            onClick={() => setOptionalOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-1 py-1 text-[0.68rem] uppercase tracking-wide text-[var(--muted-soft)]"
+          >
+            <span>
+              Optional ({optional.length})
+              {optionalDoneCount > 0 && <span className="ml-1 normal-case">· {optionalDoneCount} done</span>}
+            </span>
+            <span className="transition-transform" style={{ transform: optionalOpen ? "rotate(180deg)" : "none" }}>
+              ⌄
+            </span>
+          </button>
+          {optionalOpen && (
+            <div className="anim-fade-in-up mt-2">
+              <Timeline steps={optional} statuses={statuses} pathname={pathname} />
+            </div>
+          )}
+        </div>
+      )}
 
       <button
         onClick={() => setRestartOpen(true)}
@@ -100,14 +124,14 @@ function Timeline({
   statuses,
   pathname,
 }: {
-  title: string;
+  title?: string;
   steps: StepDef[];
   statuses: Record<string, StepStatusEntry>;
   pathname: string | null;
 }) {
   return (
-    <div className="mb-4">
-      <div className="text-[0.68rem] uppercase tracking-wide text-[var(--muted-soft)] mb-2 px-1">{title}</div>
+    <div className="mb-4 last:mb-0">
+      {title && <div className="text-[0.68rem] uppercase tracking-wide text-[var(--muted-soft)] mb-2 px-1">{title}</div>}
       <ul className="relative">
         {steps.map((s, i) => {
           const status = statuses[s.id]?.status ?? "not-started";
@@ -120,7 +144,7 @@ function Timeline({
             <li key={s.id} className="relative flex gap-3">
               {!isLast && (
                 <span
-                  className="absolute left-[15px] top-8 bottom-0 w-px"
+                  className="absolute left-4 top-8 bottom-0 w-px"
                   style={{ background: status === "done" ? "var(--ok)" : "var(--border)" }}
                 />
               )}

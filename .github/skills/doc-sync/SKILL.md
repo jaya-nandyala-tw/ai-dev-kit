@@ -1,5 +1,5 @@
 ---
-name: doc-garden
+name: doc-sync
 description: "Audit completed story plans and code for spec drift, ask clarifying questions, and apply targeted updates to keep specs in sync with the codebase."
 argument-hint: "TICKET-XXXX ticket numbers, or 'all' to scan every plan in plans/"
 ---
@@ -10,7 +10,7 @@ Replace the left column with your own specs/ tree once you've adopted the specs/
 described in this repo's README (or delete rows that don't apply).
 -->
 
-# Doc Garden
+# Doc Sync
 
 Detect and close the gap between the codebase and living documentation after stories are implemented.
 
@@ -52,10 +52,10 @@ For each plan, read 1-3 of the primary implementation files to confirm decisions
 
 ### 4. Gap Analysis
 
-**Before starting gap analysis, write a session checkpoint** to `/memories/session/garden-progress.md`:
+**Before starting gap analysis, write a session checkpoint** to `/memories/session/doc-sync-progress.md`:
 
 ```markdown
-# Doc Garden — In Progress
+# Doc Sync — In Progress
 Date: {date}
 Plans reviewed: TICKET-XXXX, TICKET-YYYY, ...
 Gap report: {paste the Explore gap report here}
@@ -117,7 +117,7 @@ Use the existing formatting style of the target file. Never delete accurate cont
 ### 7. Output Summary
 
 ```markdown
-## Doc Garden Summary — {date}
+## Doc Sync Summary — {date}
 
 ### Plans Reviewed
 - TICKET-XXXX — {title}

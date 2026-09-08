@@ -1,15 +1,16 @@
 # AI Starter Kit
 
-> **9 agents · 9 skills · 11 plugins · 3 prompts · 1 commit/PR review gate** — portal-agnostic, adopt into your own repo.
+> **9 agents · 9 skills · 3 prompts · 1 commit/PR review gate** — team-agnostic, adopt into your own repo / workspace.
 
-A shared, portal-agnostic agentic-engineering harness and dev-tooling starter kit. Clone or fork this
-repo to bootstrap a new workstream repo with the same AI coding agent conventions, guardrails, and
-local dev tooling used across your other repos — without inheriting any one product's specific paths,
-repo names, or business logic.
+An **AI harness accelerator**: a shared, team-agnostic agentic-engineering harness for AI-first
+software delivery. Clone or fork this repo to bootstrap a new workstream repo with the same AI
+coding agent conventions and guardrails used across your other repos — without inheriting any one
+product's specific paths, repo names, or business logic. This is deliberately scoped to *the
+harness* (agents, skills, guardrails, the story lifecycle) — it does not try to solve each team's
+local dev experience (auth, environment profiles, IDE workspace layout); bring your own tooling for
+that and let this kit focus on how AI agents work in your codebase.
 
-This kit was extracted from an existing production repo by generalizing everything that was reusable
-and dropping everything that was specific to that product. Wherever a piece of content needed a real
-path, repo name, or ticket format to be useful, it ships here as a clearly marked placeholder for you
+Wherever a piece of content needed a real path, repo name, or ticket format to be useful, it ships here as a clearly marked placeholder for you
 to fill in.
 
 ## Quick Start
@@ -41,7 +42,7 @@ cd onboarding-ui && npm install && npm run dev
 
 It's a local-only Next.js app that reads/writes the placeholder files for you with a diff preview
 before every write, runs the real setup scripts with live streamed output, asks a few questions
-about your stack to skip whatever doesn't apply to you, and flags which agents/skills/plugins/
+about your stack to skip whatever doesn't apply to you, and flags which agents/skills/
 scripts aren't relevant to your team so you can remove them. See `onboarding-ui/README.md`.
 
 ## Guardrails
@@ -67,20 +68,18 @@ guardrails in other agent harnesses:
 .github/
 ├── agents/        9 named agents — the story lifecycle (intake → plan → implement → test → close)
 ├── skills/        9 on-demand multi-step procedures agents invoke
-├── plugins/       11 of those skills packaged as installable, distributable bundles
 ├── prompts/       3 one-shot "/" templates (blast-radius, change-spec, trace-flow)
 ├── hooks/         the commit/PR review gate spec — see Guardrails above
 └── instructions/  always-on + path-scoped rules agents load automatically
-scripts/           AWS/Okta auth, multi-repo clone/pull, workspace toggling, local debug helpers
+scripts/           multi-repo clone/pull — gets a workstream's real repos onto disk for agents to act on
 config/            repos.json — single source of truth for which repos this harness manages
 onboarding-ui/     local-only guided setup dashboard — the click-through alternative to this checklist
 jira_client/       reusable Jira Cloud API client + NL CLI agent
 memories/          convention for durable repo indexes + ephemeral per-story checkpoints
-profiles/          example local-dev environment profiles
 ```
 
 **Adapting to a non-Claude-Code runtime:** the exact file formats here (`*.agent.md` frontmatter,
-`plugin.json` manifests) are Claude-Code-shaped. If your workstream standardizes on a different agent
+`SKILL.md` files) are Claude-Code-shaped. If your workstream standardizes on a different agent
 runtime (GitHub Copilot custom instructions, Cursor `.cursor/rules`, etc.), the *pattern* — markdown
 instructions scoped by path (`applyTo`), a small set of named multi-step workflows, a soft commit/PR
 review gate — is what's worth porting, not the literal file layout. Treat everything under `.github/`
@@ -90,18 +89,16 @@ as a reference implementation of that pattern, not a required format.
 
 | Path | Purpose |
 |---|---|
-| `.github/agents/` | Named AI agents (`@ask`, `@story`, `@groom`, `@implement`, `@git`, `@test`, `@verify`, `@doc-garden`, `@orchestrator`) that define the story lifecycle: intake → plan → approve → implement → test → review → close. |
-| `.github/skills/` | Reusable multi-step procedures agents invoke on demand (`plan-story`, `pr-manager`, `code-review`, `address-pr-comments`, `grill-me`, `handoff`, `doc-garden`, `epic-drift-check`, `generate-test-suite`). |
-| `.github/plugins/` | Self-contained bundles (manifest + skill) for the same kind of on-demand workflow, packaged for distribution as installable plugins. |
+| `.github/agents/` | Named AI agents (`@ask`, `@story`, `@intake`, `@implement`, `@git`, `@test`, `@verify`, `@doc-sync`, `@orchestrator`) that define the story lifecycle: intake → plan → approve → implement → test → review → close. |
+| `.github/skills/` | Reusable multi-step procedures agents invoke on demand (`plan-story`, `pr-manager`, `code-review`, `address-pr-comments`, `grill-me`, `handoff`, `doc-sync`, `epic-drift-check`, `generate-test-suite`). |
 | `.github/prompts/` | Reusable one-shot prompt templates (`blast-radius`, `change-spec`, `trace-flow`) invoked with `/`. |
 | `.github/hooks/` | The story-mode commit review gate — a spec for a pre-commit approval surface, plus an honest explanation of what actually enforces it in your agent runtime. |
 | `.github/instructions/` | Always-on and path-scoped rules (`applyTo` patterns) agents load automatically: global conventions, IaC conventions, worker/lambda conventions, the review-gate rule. |
-| `scripts/` | Generic dev-tooling: AWS/Okta auth, multi-repo clone/pull, VS Code workspace folder toggling, local lambda/worker debug and invoke helpers, a mock IdP + dev-login bypass for local auth, profile switching. |
-| `config/repos.json` | Single source of truth for which repos this harness clones/pulls/shows in the workspace — edit by hand or populate via `./scripts/clone-repos.sh --select` (GitHub CLI-backed multi-select). |
+| `scripts/` | Multi-repo clone/pull — the substrate that gets a multi-repo workstream's real code onto disk so path-scoped instructions and agents have something real to act on. |
+| `config/repos.json` | Single source of truth for which repos this harness clones/pulls — edit by hand or populate via `./scripts/clone-repos.sh --select` (GitHub CLI-backed multi-select). |
 | `onboarding-ui/` | Local-only Next.js dashboard that turns this README's adoption checklist and `ONBOARDING.md`'s setup steps into a click-through flow — diff preview before every write, live-streamed script execution, and a stack-aware "Recommended Resources" panel. `cd onboarding-ui && npm install && npm run dev`. |
-| `jira_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs, with a natural-language CLI agent. |
+| `jira_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs, with a natural-language CLI agent — only relevant if your team tracks tickets in Jira Cloud; optional and removable otherwise. |
 | `memories/` | The convention (not the content) for durable per-repo indexes (`memories/repo/`) and ephemeral per-story checkpoints (`memories/session/`) that agents read/write. |
-| `profiles/` | Example local-dev environment profiles (`fullstack`, `backend`, `frontend`, `lambda`, `integration`, `aws-login`) switched via `scripts/profile.sh`. |
 | `harness-engineering.md` | The methodology behind this harness — principles, context-rot failure modes, and a worked example of applying them. |
 | `STORY-IMPLEMENTATION-GUIDE.md` | How to actually run a story through the agent workflow, phase by phase. |
 | `ONBOARDING.md` | New-teammate setup guide — tooling prerequisites, one-time setup, daily workflow. |
@@ -127,15 +124,14 @@ excluded outright rather than half-genericized.
    - `CODEOWNERS` — fill in your team's real GitHub handles/groups.
    - `config/repos.json` — fill in your own GitHub org and repo list (by hand, or run
      `./scripts/clone-repos.sh --select --org <your-org>` to populate it via the GitHub CLI). This
-     single file drives `clone-repos.sh`, `pull-all.sh`, and `workspace.py` — no need to edit those
-     scripts directly.
+     single file drives `clone-repos.sh` and `pull-all.sh` — no need to edit those scripts directly.
    - `jira_client/fetch_my_stories.py` / `fetch_sprint_stories.py` — fill in your own board ID/project
      key, or delete them if you don't use Jira boards this way.
    - `.github/workflows/ci.yml` — replace the placeholder steps with your real lint/test commands.
 3. **Set up your environment**: copy `.env.template` (create your own — this kit doesn't ship product
    env vars) to `.env`, then see `ONBOARDING.md` for the full one-time setup.
 4. **Read `STORY-IMPLEMENTATION-GUIDE.md`** to understand how a story actually flows through
-   `@groom` → `@story` → `@implement` → `@test`/`@verify`/`@git` → `@doc-garden`.
+   `@intake` → `@story` → `@implement` → `@test`/`@verify`/`@git` → `@doc-sync`.
 5. **Start writing your own `specs/`** — the agents and skills here assume a `specs/<domain>/...`
    tree exists (constitutions, API contracts, data models, feature inventory); none of that product
    content ships in this kit, since it's inherently yours to write.

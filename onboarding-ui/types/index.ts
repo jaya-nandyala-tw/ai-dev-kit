@@ -1,13 +1,9 @@
 // Shared types for the onboarding dashboard. Kept in one file since the whole app is small.
 
 export type ProfileAnswers = {
-  hasFrontend: boolean;
-  hasBackend: boolean;
   hasWorkers: boolean;
   hasIac: boolean;
   usesJira: boolean;
-  usesOktaAws: boolean;
-  usesDockerCompose: boolean;
 };
 
 export type ProfileQuestionKey = keyof ProfileAnswers;

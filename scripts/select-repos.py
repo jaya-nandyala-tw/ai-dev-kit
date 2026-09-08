@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 select-repos.py — discover repos via the GitHub CLI and write your picks into
-config/repos.json (the single source of truth read by clone-repos.sh,
-pull-all.sh, and workspace.py).
+config/repos.json (the single source of truth read by clone-repos.sh and
+pull-all.sh).
 
 Usage:
   ./scripts/select-repos.py --org my-org                    # browse & multi-select from an org
@@ -105,7 +105,7 @@ def prompt_multiselect(repos):
     return [repos[i - 1] for i in sorted(picks) if 1 <= i <= len(repos)]
 
 
-def prompt_tier_and_group(selected, existing_groups):
+def prompt_tier(selected):
     print("\nFor each repo: core service (always cloned) or worker/lambda (cloned unless "
           "--core-only)?")
     default = input("Default for all — [c]ore or [w]orker? (Enter = w): ").strip().lower() or "w"
@@ -113,13 +113,7 @@ def prompt_tier_and_group(selected, existing_groups):
     for r in selected:
         tier_in = input(f"  {r['name']} [c/w] (Enter = {default}): ").strip().lower() or default
         tier = "core" if tier_in.startswith("c") else "worker"
-        entry = {"name": r["name"], "tier": tier}
-        if tier == "worker":
-            hint = f" (existing: {', '.join(existing_groups)})" if existing_groups else ""
-            group = input(f"    group for {r['name']}{hint} (Enter = ungrouped): ").strip()
-            if group:
-                entry["group"] = group
-        entries.append(entry)
+        entries.append({"name": r["name"], "tier": tier})
     return entries
 
 
@@ -127,7 +121,7 @@ def load_config():
     if CONFIG_FILE.exists():
         with open(CONFIG_FILE) as f:
             return json.load(f)
-    return {"github": {"org": "", "protocol": "ssh"}, "groups": {}, "repos": []}
+    return {"github": {"org": "", "protocol": "ssh"}, "repos": []}
 
 
 def save_config(cfg):
@@ -143,9 +137,6 @@ def merge(cfg, new_entries, org):
     by_name = {r["name"]: r for r in cfg.get("repos", [])}
     for e in new_entries:
         by_name[e["name"]] = {**by_name.get(e["name"], {}), **e}
-        group = e.get("group")
-        if group and group not in cfg.get("groups", {}):
-            cfg.setdefault("groups", {})[group] = f"{group} — add a description"
     cfg["repos"] = list(by_name.values())
     return cfg
 
@@ -181,7 +172,7 @@ def main():
         return
 
     cfg = load_config()
-    entries = prompt_tier_and_group(selected, list(cfg.get("groups", {}).keys()))
+    entries = prompt_tier(selected)
     cfg = merge(cfg, entries, args.org)
 
     if args.dry_run:

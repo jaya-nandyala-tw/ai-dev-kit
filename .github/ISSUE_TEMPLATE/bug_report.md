@@ -1,13 +1,13 @@
 ---
 name: Bug report
-about: Report a problem with an agent, plugin, skill, or dev-tooling script in this kit
+about: Report a problem with an agent, skill, or dev-tooling script in this kit
 title: "[BUG] "
 labels: bug
 ---
 
 ## What's broken
 
-## Where (agent / plugin / skill / script / instructions file)
+## Where (agent / skill / script / instructions file)
 
 ## Steps to reproduce
 

@@ -16,7 +16,7 @@ or remove it if you'd rather not carry an example that isn't yours.
 
 Propagate a changed decision to every sibling plan under the same epic, mechanically — this guardrail
 exists because "update the epic index later" tends not to happen once a story is in flight, so this
-check is unconditional, not judgment-based. Any caller (`@story`, `@groom`, `@implement`) that edits a
+check is unconditional, not judgment-based. Any caller (`@story`, `@intake`, `@implement`) that edits a
 plan's `## Decisions` table where the plan has a non-empty `Epic:` field **must** invoke this skill
 immediately, before continuing — it is not something an agent decides to do if it notices.
 
@@ -57,7 +57,7 @@ For each row in the index's child-story table:
 ### 3. Update the epic index itself
 
 Append the same decision change to the epic index's own shared `## Decisions` table and its
-`## Steering Log`, so the next story groomed under this epic sees it without re-deriving it.
+`## Steering Log`, so the next story processed under this epic sees it without re-deriving it.
 
 ### 4. Report before resuming
 

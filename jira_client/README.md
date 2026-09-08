@@ -125,6 +125,6 @@ All errors are caught in the CLI loop and printed without crashing the agent.
 
 `fetch_my_stories.py` and `fetch_sprint_stories.py` have a hardcoded `BOARD_ID`
 (and `PROJECT`) placeholder at the top — fill those in with your own Jira
-board ID and project key. The `@groom` agent's "Ticket Auto-Fetch" section
-(`.github/agents/groom.agent.md`) also uses this client to pull ticket details
-directly into story grooming.
+board ID and project key. The `@intake` agent's "Ticket Auto-Fetch" section
+(`.github/agents/intake.agent.md`) also uses this client to pull ticket details
+directly into story intake.

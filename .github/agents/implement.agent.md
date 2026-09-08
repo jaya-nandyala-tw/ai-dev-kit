@@ -23,7 +23,7 @@ You must be given a ticket number (`TICKET-XXXX`) alongside the task. Before tou
 3. Only if `Phase` is `approved` or later, proceed.
 
 This is a hard gate, not a suggestion — it exists specifically so nothing can enter the loop mid-flow
-by invoking `@implement` cold on a ticket that was never groomed or approved.
+by invoking `@implement` cold on a ticket that never went through intake or approval.
 
 ## Scope discipline
 

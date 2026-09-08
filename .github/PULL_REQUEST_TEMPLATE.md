@@ -1,7 +1,7 @@
 ## Summary
 
 ## What changed
-- Agent / plugin / skill / instructions / script:
+- Agent / skill / instructions / script:
 
 ## Portal-agnostic check
 - [ ] This change contains no product-specific paths, repo names, or business logic — only placeholders and generic conventions

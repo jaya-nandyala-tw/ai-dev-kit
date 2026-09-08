@@ -60,7 +60,7 @@ When multiple patterns match (e.g. service src + tests changed), run **all** mat
 ## Epic Drift Check
 
 See the `epic-drift-check` skill for the full procedure. Invoked **unconditionally** — not left to be
-"noticed" — by `@story`/`@groom`/`@implement` any time a plan's `## Decisions` table changes and that
+"noticed" — by `@story`/`@intake`/`@implement` any time a plan's `## Decisions` table changes and that
 plan has a non-empty `Epic:` field. The skill reads the structured child-story index at
 `plans/epics/{EPIC-KEY}.md`, not a free-text grep.
 

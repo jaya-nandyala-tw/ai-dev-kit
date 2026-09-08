@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast, type ToastMessage } from "@/lib/toast";
 
 const STYLES: Record<ToastMessage["kind"], { border: string; icon: string }> = {
@@ -9,8 +10,14 @@ const STYLES: Record<ToastMessage["kind"], { border: string; icon: string }> = {
   info: { border: "var(--accent)", icon: "ℹ" },
 };
 
+// z-index scale for this app's overlays: toasts sit below dialogs (z-60 < ConfirmDialog's
+// z-100) so a background toast never covers a modal you're actively responding to. Portalled to
+// document.body for the same stacking-context reason as ConfirmDialog — see globals.css.
 export function ToastHost() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     return toast.subscribe((t) => {
@@ -21,10 +28,10 @@ export function ToastHost() {
     });
   }, []);
 
-  if (toasts.length === 0) return null;
+  if (!mounted || toasts.length === 0) return null;
 
-  return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+  return createPortal(
+    <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm">
       {toasts.map((t) => {
         const s = STYLES[t.kind];
         return (
@@ -38,6 +45,7 @@ export function ToastHost() {
           </div>
         );
       })}
-    </div>
+    </div>,
+    document.body,
   );
 }

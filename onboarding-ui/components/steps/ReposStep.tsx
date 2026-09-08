@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { toast } from "@/lib/toast";
 import type { DiffResult } from "@/types";
 
-type Row = { name: string; visibility: string; selected: boolean; tier: "core" | "worker"; group: string };
+type Row = { name: string; visibility: string; selected: boolean; tier: "core" | "worker" };
 
 export function ReposStep({ onWritten }: { onWritten: () => void }) {
   const [org, setOrg] = useState("");
@@ -32,7 +32,11 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
   }, []);
 
   async function loadRepos() {
-    if (!org.trim()) return;
+    if (!org.trim()) {
+      setGhError("Enter a GitHub org first.");
+      toast.error("Enter a GitHub org first.");
+      return;
+    }
     setGhError(null);
     setLoadingRepos(true);
     const res = await fetchGhRepos(org);
@@ -42,7 +46,7 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
       toast.error("Could not load repos via gh");
       return;
     }
-    setRows(res.repos.map((r) => ({ name: r.name, visibility: r.visibility, selected: false, tier: "core", group: "" })));
+    setRows(res.repos.map((r) => ({ name: r.name, visibility: r.visibility, selected: false, tier: "core" })));
     toast.success(`Loaded ${res.repos.length} repos from ${org}`);
   }
 
@@ -54,12 +58,9 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
 
   function buildValues() {
     const selected = rows.filter((r) => r.selected);
-    const groups: Record<string, string> = {};
-    for (const r of selected) if (r.tier === "worker" && r.group) groups[r.group] = r.group;
     return {
       github: { org, protocol: "ssh" as const },
-      groups,
-      repos: selected.map((r) => ({ name: r.name, tier: r.tier, ...(r.tier === "worker" && r.group ? { group: r.group } : {}) })),
+      repos: selected.map((r) => ({ name: r.name, tier: r.tier })),
     };
   }
 
@@ -92,7 +93,13 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
             placeholder="your-github-org"
             className="field-input flex-1"
           />
-          <Button variant="secondary" onClick={loadRepos} loading={loadingRepos} icon={<span>🐙</span>}>
+          <Button
+            variant="secondary"
+            onClick={loadRepos}
+            loading={loadingRepos}
+            disabled={!org.trim()}
+            icon={<span>🐙</span>}
+          >
             Load via gh
           </Button>
         </div>
@@ -116,31 +123,21 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
                 <input type="checkbox" checked={r.selected} onChange={(e) => toggle(i, { selected: e.target.checked })} />
                 <span className="mono text-sm flex-1 min-w-[10rem]">{r.name}</span>
                 {r.selected && (
-                  <>
-                    <div className="flex rounded-lg overflow-hidden border border-[var(--border)] text-xs">
-                      {(["core", "worker"] as const).map((tier) => (
-                        <button
-                          key={tier}
-                          onClick={() => toggle(i, { tier })}
-                          className="px-2.5 py-1"
-                          style={{
-                            background: r.tier === tier ? "var(--accent)" : "transparent",
-                            color: r.tier === tier ? "white" : "var(--muted)",
-                          }}
-                        >
-                          {tier}
-                        </button>
-                      ))}
-                    </div>
-                    {r.tier === "worker" && (
-                      <input
-                        value={r.group}
-                        onChange={(e) => toggle(i, { group: e.target.value })}
-                        placeholder="group, e.g. messaging"
-                        className="field-input text-xs py-1 w-40"
-                      />
-                    )}
-                  </>
+                  <div className="flex rounded-lg overflow-hidden border border-[var(--border)] text-xs">
+                    {(["core", "worker"] as const).map((tier) => (
+                      <button
+                        key={tier}
+                        onClick={() => toggle(i, { tier })}
+                        className="px-2.5 py-1"
+                        style={{
+                          background: r.tier === tier ? "var(--accent)" : "transparent",
+                          color: r.tier === tier ? "white" : "var(--muted)",
+                        }}
+                      >
+                        {tier}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}
@@ -163,7 +160,7 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
       <ConfirmDialog
         open={confirmOpen}
         title="Write config/repos.json"
-        body="This is the single source of truth for clone-repos.sh, pull-all.sh, and workspace.py."
+        body="This is the single source of truth for clone-repos.sh and pull-all.sh."
         confirmLabel="Write"
         onConfirm={commit}
         onCancel={() => setConfirmOpen(false)}

@@ -13,14 +13,14 @@ Nothing in this repo should reference a specific product, service name, repo, or
 
 If content can't be generalized without losing its value, it probably doesn't belong in this kit — keep it in your own project's fork instead.
 
-## Proposing a new agent, plugin, or skill
+## Proposing a new agent or skill
 
 1. Open an issue first (use the feature request template) describing the workflow gap this fills and confirming it's generic enough for other teams.
-2. Follow the existing structure: agents go in `.github/agents/*.agent.md`, plugins in `.github/plugins/<name>/`, skills in `.github/skills/<name>/SKILL.md`.
+2. Follow the existing structure: agents go in `.github/agents/*.agent.md`, skills in `.github/skills/<name>/SKILL.md`.
 3. Include the placeholder conventions above wherever the content would otherwise need a real path or name.
 4. Open a PR using the PR template and check the "portal-agnostic" box honestly.
 
-## Proposing a change to an existing agent/plugin/skill/instructions file
+## Proposing a change to an existing agent/skill/instructions file
 
 Small clarifications and bug fixes can go straight to a PR. Larger behavioral changes (new guardrails, changed phase flow, new required fields) should get an issue first so other adopting teams can weigh in — a change here potentially breaks every downstream fork's workflow.
 

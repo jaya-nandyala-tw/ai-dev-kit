@@ -174,7 +174,7 @@ When multiple patterns match (e.g. service src + tests changed), run **all** mat
 ## Epic Drift Check
 
 See the \`epic-drift-check\` skill for the full procedure. Invoked **unconditionally** — not left to be
-"noticed" — by \`@story\`/\`@groom\`/\`@implement\` any time a plan's \`## Decisions\` table changes and that
+"noticed" — by \`@story\`/\`@intake\`/\`@implement\` any time a plan's \`## Decisions\` table changes and that
 plan has a non-empty \`Epic:\` field. The skill reads the structured child-story index at
 \`plans/epics/{EPIC-KEY}.md\`, not a free-text grep.
 
@@ -193,34 +193,25 @@ in the same turn — do not persist a checkpoint that contradicts its plan file.
 `;
 
 export const REPOS_JSON_BASELINE = `{
-  "_comment": "GENERICIZED TEMPLATE — single source of truth for scripts/clone-repos.sh, scripts/pull-all.sh, and scripts/workspace.py. Edit this file by hand, or run ./scripts/clone-repos.sh --select to populate it via the GitHub CLI. See ONBOARDING.md § Adding Other Repos to This Harness.",
+  "_comment": "GENERICIZED TEMPLATE — single source of truth for scripts/clone-repos.sh and scripts/pull-all.sh. Edit this file by hand, or run ./scripts/clone-repos.sh --select to populate it via the GitHub CLI. See ONBOARDING.md § Adding Other Repos to This Harness.",
   "github": {
     "org": "<your-github-org>",
     "protocol": "ssh"
   },
-  "groups": {
-    "example-group": "Example domain group — replace with your own"
-  },
   "repos": [
     { "name": "<service-name>", "tier": "core" },
     { "name": "<another-service-name>", "tier": "core" },
-    { "name": "<worker-repo-1>", "tier": "worker", "group": "example-group" },
-    { "name": "<worker-repo-2>", "tier": "worker", "group": "example-group" }
+    { "name": "<worker-repo-1>", "tier": "worker" },
+    { "name": "<worker-repo-2>", "tier": "worker" }
   ]
 }
 `;
 
 // This kit deliberately ships no .env.template (README: "this kit doesn't ship product env
-// vars"). The wizard authors a minimal one on first use of the "Dev profile / .env" step so
-// scripts/profile.sh (which does `cp .env.template .env` when .env is missing) has something to
-// copy from.
-export const ENV_TEMPLATE_BASELINE = `# ── Personal / always-preserved settings (kept across profile switches) ──
+// vars") — the "env" managed file falls back to this in-memory baseline when .env doesn't exist
+// yet on disk, so DEV_EMAIL/JIRA_* have somewhere sane to write to on first use.
+export const ENV_BASELINE = `# ── Personal settings ──
 DEV_EMAIL=
-AWS_ENV=
-AWS_PROFILE=
-
-# ── Local dev defaults (overridden by whichever profiles/*.env you apply) ──
-START_MODE=all
 `;
 
 export const FETCH_MY_STORIES_BASELINE_BOARD_LINE = 'BOARD_ID = 0  # fill in your board ID';

@@ -5,15 +5,13 @@ import { useParams } from "next/navigation";
 import { DashboardShell } from "@/components/DashboardShell";
 import { getAdjacentStepIds, getStepDef, getVisibleSteps } from "@/lib/stepDefs";
 import { StatusBadge } from "@/components/StatusBadge";
+import { StepHelpButton } from "@/components/StepHelpButton";
 import { Button } from "@/components/ui/Button";
 import { PrerequisitesStep } from "@/components/steps/PrerequisitesStep";
 import { QuestionnaireStep } from "@/components/steps/QuestionnaireStep";
 import { ReposStep } from "@/components/steps/ReposStep";
 import { RunStep } from "@/components/steps/RunStep";
 import { FileFormStep } from "@/components/steps/FileFormStep";
-import { WorkspaceStep } from "@/components/steps/WorkspaceStep";
-import { DevProfileStep } from "@/components/steps/DevProfileStep";
-import { AwsAuthStep } from "@/components/steps/AwsAuthStep";
 import { JiraStep } from "@/components/steps/JiraStep";
 
 const FILE_FORM_KEY_BY_STEP: Record<string, string> = {
@@ -47,9 +45,12 @@ export default function StepPage() {
                 </p>
                 <StatusBadge status={status} />
               </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl leading-none">{def.icon}</span>
-                <h1 className="text-lg font-semibold">{def.title}</h1>
+              <div className="flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl leading-none">{def.icon}</span>
+                  <h1 className="text-lg font-semibold">{def.title}</h1>
+                </div>
+                <StepHelpButton stepId={stepId} title={def.title} icon={def.icon} />
               </div>
               <p className="text-sm text-[var(--muted)] mt-1">{def.description}</p>
             </div>
@@ -86,12 +87,6 @@ export default function StepPage() {
               )}
 
               {stepId === "jira" && <JiraStep onDone={refresh} />}
-
-              {def.kind === "workspace" && <WorkspaceStep onDone={refresh} />}
-
-              {def.kind === "profile" && <DevProfileStep onDone={refresh} />}
-
-              {def.kind === "aws" && <AwsAuthStep onDone={refresh} />}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-[var(--border-soft)]">

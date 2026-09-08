@@ -37,7 +37,7 @@ export default function RecommendationsPage() {
             </h1>
             <p className="text-sm text-[var(--muted)]">
               {profile
-                ? "Computed from your stack answers — not every agent/skill/plugin/script this kit ships is useful to every team."
+                ? "Computed from your stack answers — not every agent/skill/script this kit ships is useful to every team."
                 : "Answer the stack questionnaire first for real recommendations — everything shows as relevant until then."}
             </p>
           </div>

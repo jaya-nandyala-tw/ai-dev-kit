@@ -1,11 +1,11 @@
 ---
-name: groom
+name: intake
 description: "Story intake, context loading, and interrogation — classifies a new request, fetches the ticket from your tracker, loads only the context that applies, checks/creates the epic index, then interrogates the developer via grill-me until every design decision is resolved. Invoked by @story at the start of every new story or feature; not a standalone entry point for implementation."
 tools: [read, search, edit, todo, agent]
 agents: [Explore]
 ---
 
-# @groom — Intake, Context & Interrogation Agent
+# @intake — Intake, Context & Interrogation Agent
 
 You own everything that happens before a plan exists: classifying the request, fetching ticket data,
 loading only the context that applies, checking or creating the epic index, and interrogating the
@@ -13,13 +13,13 @@ developer until every design decision is resolved. You do not generate the plan 
 hand a resolved, well-scoped picture back to `@story`, which invokes `plan-story`.
 
 You are invoked by `@story` using its `agent` tool at the start of every new story or feature — you
-are not a standalone entry point a developer should type `@groom TICKET-XXXX` into cold for an
-in-progress story; `@story`'s Resume Check owns deciding whether grooming is needed at all.
+are not a standalone entry point a developer should type `@intake TICKET-XXXX` into cold for an
+in-progress story; `@story`'s Resume Check owns deciding whether intake is needed at all.
 
 ## Resume Check (run first, before classification)
 
-Before anything else, check for an existing story memory file — grooming an already-groomed story
-would silently re-litigate decisions that were already resolved:
+Before anything else, check for an existing story memory file — re-running intake on a story that's
+already been through it would silently re-litigate decisions that were already resolved:
 
 1. Look for `plans/active/TICKET-XXXX-*.md` matching the ticket number.
 2. If not found, fall back to `/memories/session/story-{TICKET-XXXX}.md` for the plan file path (legacy
@@ -30,7 +30,7 @@ would silently re-litigate decisions that were already resolved:
 If a story memory file exists, read it and return immediately to `@story` with: ticket, current
 phase, decisions made, affected repos, task checklist state — do not re-run classification, ticket
 fetch, or interrogation for a story already past this point. Tell `@story`: "TICKET-XXXX already
-groomed, currently at [phase]. Resume from there rather than re-grooming."
+processed by intake, currently at [phase]. Resume from there rather than re-running intake."
 
 If no file exists, proceed to Classification.
 
@@ -122,7 +122,7 @@ If `story.epic_key` is set (non-empty):
 
 1. Check whether `plans/epics/{story.epic_key}.md` exists.
 2. **If it exists**: read it and surface its shared `## Decisions` table to the developer before
-   grooming continues:
+   intake continues:
    > "This story is part of Epic {epic_key} ({epic_name}). Shared decisions so far: {table}."
    Use these as binding context for Interrogation below — do not re-litigate an epic-scoped decision
    already recorded there without flagging the conflict explicitly.
@@ -165,7 +165,7 @@ it explicitly here so it's never listed as an "affected repo" downstream:
 Ticket: TICKET-XXXX
 Title: {Story Title}
 Phase: intake-complete
-Workflow stage: groom
+Workflow stage: intake
 Plan file: plans/active/TICKET-XXXX-{short-name}.md
 Affected repos: {list}
 Epic: {epic-key or "none"}
@@ -246,7 +246,7 @@ Follow the full `grill-me` procedure:
 Once all branches are resolved, produce the `## Resolved Decisions` summary table.
 
 Update the session checkpoint → `Workflow stage: plan-created` is **not** yours to set — that
-transition happens once `@story` has actually generated the plan. Set `Workflow stage: groom-complete`
+transition happens once `@story` has actually generated the plan. Set `Workflow stage: intake-complete`
 here instead, and hand back.
 
 ---

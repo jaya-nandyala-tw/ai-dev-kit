@@ -1,6 +1,6 @@
 ---
 description: "Generate a change spec for a user story — affected repos, files, APIs, deployment steps, blast radius"
-agent: "groom"
+agent: "intake"
 ---
 
 Break down the following story into a change spec:

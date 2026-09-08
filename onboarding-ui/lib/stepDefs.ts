@@ -2,15 +2,7 @@
 // Status per step comes from GET /api/status (server-computed via lib/detectors.ts); this file
 // only describes what to show, in what order, and how steps relate to each other.
 
-export type StepKind =
-  | "prerequisites"
-  | "questionnaire"
-  | "repos"
-  | "run"
-  | "file-form"
-  | "workspace"
-  | "profile"
-  | "aws";
+export type StepKind = "prerequisites" | "questionnaire" | "repos" | "run" | "file-form";
 
 export type StepDef = {
   id: string;
@@ -30,7 +22,7 @@ export const STEP_DEFS: StepDef[] = [
     id: "prerequisites",
     title: "Prerequisites check",
     shortTitle: "Prerequisites",
-    description: "Confirm git, node, python3, docker, aws, gh, and pre-commit are on your PATH.",
+    description: "Confirm git, node, python3, gh, and pre-commit are on your PATH.",
     kind: "prerequisites",
     group: "required",
     icon: "🧰",
@@ -63,15 +55,6 @@ export const STEP_DEFS: StepDef[] = [
     icon: "🪝",
   },
   {
-    id: "codeowners",
-    title: "Code ownership",
-    shortTitle: "CODEOWNERS",
-    description: "Map path globs to GitHub handles/teams so review requests route correctly.",
-    kind: "file-form",
-    group: "required",
-    icon: "👥",
-  },
-  {
     id: "pre-commit-config",
     title: "Pre-commit config globs",
     shortTitle: "Hook globs",
@@ -99,13 +82,13 @@ export const STEP_DEFS: StepDef[] = [
     icon: "📡",
   },
   {
-    id: "vscode-workspace",
-    title: "VS Code workspace",
-    shortTitle: "Workspace",
-    description: "Generate ai-workspace.code-workspace and toggle worker-group visibility.",
-    kind: "workspace",
-    group: "required",
-    icon: "🗂️",
+    id: "codeowners",
+    title: "Code ownership",
+    shortTitle: "CODEOWNERS",
+    description: "Map path globs to GitHub handles/teams so review requests route correctly.",
+    kind: "file-form",
+    group: "optional",
+    icon: "👥",
   },
   {
     id: "talisman",
@@ -125,25 +108,6 @@ export const STEP_DEFS: StepDef[] = [
     group: "optional",
     icon: "🎫",
     showWhen: (p) => !!p?.usesJira,
-  },
-  {
-    id: "dev-profile",
-    title: "Dev profile & .env",
-    shortTitle: "Dev profile",
-    description: "Apply a local dev profile and set your DEV_EMAIL.",
-    kind: "profile",
-    group: "optional",
-    icon: "🧑‍💻",
-  },
-  {
-    id: "aws-auth",
-    title: "AWS auth",
-    shortTitle: "AWS auth",
-    description: "Guided Okta/AWS CLI login, plus a non-interactive verify step.",
-    kind: "aws",
-    group: "optional",
-    icon: "☁️",
-    showWhen: (p) => !!p?.usesOktaAws,
   },
 ];
 

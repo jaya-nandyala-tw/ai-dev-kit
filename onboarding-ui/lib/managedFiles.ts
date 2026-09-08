@@ -226,8 +226,7 @@ const globalInstructions: ManagedFileDef = {
 
 type ReposDoc = {
   github: { org: string; protocol: "ssh" | "https" };
-  groups: Record<string, string>;
-  repos: Array<{ name: string; tier: "core" | "worker"; group?: string }>;
+  repos: Array<{ name: string; tier: "core" | "worker" }>;
 };
 
 const reposJson: ManagedFileDef = {
@@ -246,11 +245,11 @@ const reposJson: ManagedFileDef = {
   },
   buildProposed: (values) => {
     const doc = values as unknown as ReposDoc;
-    return { "config/repos.json": JSON.stringify({ github: doc.github, groups: doc.groups, repos: doc.repos }, null, 2) + "\n" };
+    return { "config/repos.json": JSON.stringify({ github: doc.github, repos: doc.repos }, null, 2) + "\n" };
   },
 };
 
-// ── .env (personal — DEV_EMAIL / AWS_* / START_MODE / JIRA_*) ──────────────
+// ── .env (personal — DEV_EMAIL / JIRA_*) ────────────────────────────────────
 
 function parseEnvFile(content: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -287,35 +286,21 @@ const envFile: ManagedFileDef = {
   relPaths: [".env"],
   personal: true,
   fields: [
-    { name: "DEV_EMAIL", label: "Your work email", type: "text", placeholder: "you@your-company.com" },
-    { name: "AWS_ENV", label: "AWS environment", type: "text", placeholder: "dev" },
-    { name: "AWS_PROFILE", label: "AWS CLI profile name", type: "text", placeholder: "your-profile" },
+    { name: "DEV_EMAIL", label: "Your work email", type: "text", placeholder: "you@your-company.com", help: "Also used as the Jira auth email." },
     { name: "JIRA_BASE_URL", label: "Jira base URL", type: "text", placeholder: "https://your-org.atlassian.net" },
     { name: "JIRA_API_TOKEN", label: "Jira API token", type: "text", placeholder: "atlassian API token" },
   ],
-  baseline: () => T.ENV_TEMPLATE_BASELINE,
+  baseline: () => T.ENV_BASELINE,
   parseCurrentValues: () => {
-    const current = readIfExists(".env") ?? readIfExists(".env.template") ?? T.ENV_TEMPLATE_BASELINE;
+    const current = readIfExists(".env") ?? T.ENV_BASELINE;
     return parseEnvFile(current);
   },
   buildProposed: (values) => {
-    const current = readIfExists(".env") ?? readIfExists(".env.template") ?? T.ENV_TEMPLATE_BASELINE;
+    const current = readIfExists(".env") ?? T.ENV_BASELINE;
     const updates: Record<string, string> = {};
     for (const [k, v] of Object.entries(values)) updates[k] = String(v ?? "");
     return { ".env": upsertEnvKeys(current, updates) };
   },
-};
-
-// ── .env.template (bootstraps .env for scripts/profile.sh) ─────────────────
-
-const envTemplateFile: ManagedFileDef = {
-  key: "env-template",
-  label: ".env.template",
-  relPaths: [".env.template"],
-  fields: [],
-  baseline: () => T.ENV_TEMPLATE_BASELINE,
-  parseCurrentValues: () => ({}),
-  buildProposed: () => ({ ".env.template": T.ENV_TEMPLATE_BASELINE }),
 };
 
 // ── jira_client board/project constants ─────────────────────────────────────
@@ -362,7 +347,6 @@ const REGISTRY: Record<string, ManagedFileDef> = {
   "global-instructions": globalInstructions,
   "repos-json": reposJson,
   env: envFile,
-  "env-template": envTemplateFile,
   "jira-board": jiraBoard,
 };
 

@@ -208,7 +208,7 @@ Skip for pure refactors, style changes, or test-only stories.
 
 ### Spike Plan Template
 
-Used when `@groom`'s Phase 0 classification is "Tech design / spike" — formalizes a `TICKET-SPIKE-*`
+Used when `@intake`'s Phase 0 classification is "Tech design / spike" — formalizes a `TICKET-SPIKE-*`
 naming convention. Save to `plans/active/TICKET-SPIKE-{short-name}.md`.
 
 ```markdown
@@ -248,7 +248,7 @@ epic's child-story table the same way a story would be.
 
 ### Bug/Hotfix Plan Template
 
-Used when `@groom`'s Phase 0 classification is "Bug fix / hotfix." Save to
+Used when `@intake`'s Phase 0 classification is "Bug fix / hotfix." Save to
 `plans/active/BUG-{short-name}.md` or `plans/active/HOTFIX-{short-name}.md`. Deliberately lightweight
 — but **still mandatory**, even on the fast path where shared infra isn't touched and Interrogation is
 skipped: no path should let code get written with zero durable artifact.

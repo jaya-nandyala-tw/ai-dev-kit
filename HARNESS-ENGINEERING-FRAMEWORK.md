@@ -24,10 +24,12 @@ that produces code that looks like *your* codebase wrote it.
 | Mistakes | Caught by a human in review | Caught by a sensor (lint/test/verify) and self-corrected first |
 | Commit/PR safety | However careful you remember to be | A soft review gate — you see the diff before `git commit`/`git push` |
 
-This kit is that harness, pre-built and portal-agnostic: **9 agents, 9 skills, 11 plugins, 3
-prompts, one review gate** — plus the local dev tooling (multi-repo clone/pull, workspace
-management, AWS/Okta auth, environment profiles) every workstream repo ends up needing anyway.
-You adopt it once per repo instead of reassembling it from scratch.
+This kit is that harness, pre-built and portal-agnostic: **9 agents, 9 skills, 3
+prompts, one review gate** — plus the one piece of local tooling every multi-repo workstream
+actually needs regardless of stack (getting the real repos onto disk, via `config/repos.json`).
+Deliberately not included: your team's local dev experience — cloud auth, environment profiles,
+IDE workspace layout. That's yours to bring; this kit is scoped to the harness. You adopt it once
+per repo instead of reassembling it from scratch.
 
 ---
 
@@ -60,11 +62,10 @@ You adopt it once per repo instead of reassembling it from scratch.
 
 | Piece | What it does |
 |---|---|
-| `.github/agents/` | 9 named agents covering the story lifecycle — `@ask`, `@story` (loop controller), `@groom` (intake), `@implement`, `@test`, `@verify`, `@git`, `@doc-garden`, `@orchestrator` |
+| `.github/agents/` | 9 named agents covering the story lifecycle — `@ask`, `@story` (loop controller), `@intake`, `@implement`, `@test`, `@verify`, `@git`, `@doc-sync`, `@orchestrator` |
 | `.github/skills/` | 9 on-demand multi-step procedures the agents invoke — planning, PR management, code review, handoff, drift checks |
-| `.github/plugins/` | The same kind of workflow, packaged as installable/distributable bundles |
 | `.github/hooks/` | The commit/PR review gate — the one real safety mechanism this kit ships |
-| `scripts/` + `config/repos.json` | Multi-repo clone/pull, VS Code workspace toggling, AWS/Okta auth, local profile switching |
+| `scripts/` + `config/repos.json` | Multi-repo clone/pull — the substrate that gets a workstream's real repos onto disk for agents to act on |
 | `onboarding-ui/` | A guided, local-only dashboard that does the adoption steps below *for* you — see [Getting Started](#getting-started) |
 
 Full detail and the complete file-by-file table: `README.md`.
@@ -75,7 +76,7 @@ How one ticket actually moves through the agents, from intake to close:
 
 ```mermaid
 flowchart LR
-    A["New ticket"] --> B["@groom<br/>intake & classify"]
+    A["New ticket"] --> B["@intake<br/>classify & fetch ticket"]
     B --> C["Plan drafted<br/>(plan-story skill)"]
     C --> D{"Human approves<br/>the plan?"}
     D -- "no, revise" --> C
@@ -87,7 +88,7 @@ flowchart LR
     H -- yes --> E
     H -- no --> I["@verify<br/>vs. acceptance criteria"]
     I --> J["@git<br/>branch & PR<br/>(soft review gate)"]
-    J --> K["@doc-garden<br/>update specs if touched"]
+    J --> K["@doc-sync<br/>update specs if touched"]
     K --> L["Story closed"]
 ```
 
