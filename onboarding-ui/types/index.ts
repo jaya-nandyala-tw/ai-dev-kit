@@ -107,6 +107,10 @@ export const CONTEXT_CATEGORIES: { value: ContextCategory; label: string }[] = [
   { value: "uncategorized", label: "Uncategorized" },
 ];
 
+// How a context item's raw content was originally acquired — recorded in the item's frontmatter
+// and surfaced in the UI, but never changes how it's stored or drafted from.
+export type ContextSource = "pasted" | "pdf" | "confluence";
+
 export type ContextItem = {
   slug: string;
   title: string;
@@ -115,4 +119,30 @@ export type ContextItem = {
   createdAt: string;
   relPath: string;
   hasDraft: boolean;
+  source: ContextSource;
+  sourceUrl?: string;
+};
+
+// A single Confluence page as returned by atlassian_client's confluence_cli (search or get) —
+// shared between the client and the API routes that shell out to that CLI.
+export type ConfluencePageResult = {
+  id: string;
+  title: string;
+  spaceKey: string;
+  url: string;
+  version: number | null;
+  excerpt: string | null;
+  body: string | null;
+};
+
+// ── Aggregated spec generation (multi-source "Generate spec") ──────────────
+// One combined-spec generation run turns N ContextItems (all in the same category) into a small
+// set of Markdown files under specs/drafts/<baseSlug>/ — an index.md plus optional sub-flow
+// files, per the "progressive disclosure" principle in harness-engineering.md. Each proposed file
+// is previewed as a DiffResult (same three-way-diff machinery as managedFiles.ts) before write.
+export type SpecFilePreview = {
+  /** Relative to specs/drafts/<baseSlug>/ — e.g. "index.md" or "password-reset-flow.md". */
+  relPath: string;
+  title: string;
+  diff: DiffResult;
 };

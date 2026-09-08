@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { repoPath } from "./paths";
 import { CONTEXT_CATEGORIES } from "@/types";
-import type { ContextCategory, ContextItem } from "@/types";
+import type { ContextCategory, ContextItem, ContextSource } from "@/types";
 
 // Acquired context dumps are real markdown files under specs/context/<category>/ — the
 // harness's own instructions already expect specs to live under specs/, so this lands directly
@@ -14,7 +14,7 @@ const INDEX_REL = "specs/context/index.json";
 const CONTEXT_ROOT_REL = "specs/context";
 const DRAFTS_ROOT_REL = "specs/drafts";
 
-function slugify(input: string): string {
+export function slugify(input: string): string {
   const base = input
     .toLowerCase()
     .trim()
@@ -45,7 +45,12 @@ function draftRelPath(slug: string): string {
 
 export function listContextItems(): ContextItem[] {
   return readIndex()
-    .map((item) => ({ ...item, hasDraft: fs.existsSync(repoPath(draftRelPath(item.slug))) }))
+    .map((item) => ({
+      ...item,
+      // Backfill for items written before `source` existed on the index.
+      source: item.source ?? "pasted",
+      hasDraft: fs.existsSync(repoPath(draftRelPath(item.slug))),
+    }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -67,10 +72,17 @@ export { draftRelPath };
 
 const VALID_CATEGORIES = new Set(CONTEXT_CATEGORIES.map((c) => c.value));
 
-export function saveContextItem(input: { title: string; category: ContextCategory; content: string }): ContextItem {
+export function saveContextItem(input: {
+  title: string;
+  category: ContextCategory;
+  content: string;
+  source?: ContextSource;
+  sourceUrl?: string;
+}): ContextItem {
   if (!VALID_CATEGORIES.has(input.category)) {
     throw new Error(`Unknown category "${input.category}".`);
   }
+  const source: ContextSource = input.source ?? "pasted";
   const items = readIndex();
   const base = slugify(input.title);
   let slug = base;
@@ -82,12 +94,32 @@ export function saveContextItem(input: { title: string; category: ContextCategor
   const trimmed = input.content.trim();
   const summary = trimmed.split("\n")[0]?.slice(0, 140) ?? "";
 
-  const body = `---\ntitle: ${input.title}\ncategory: ${input.category}\nsource: pasted\ndate: ${createdAt}\n---\n\n${trimmed}\n`;
+  const frontmatter = [
+    "---",
+    `title: ${input.title}`,
+    `category: ${input.category}`,
+    `source: ${source}`,
+    ...(input.sourceUrl ? [`sourceUrl: ${input.sourceUrl}`] : []),
+    `date: ${createdAt}`,
+    "---",
+    "",
+  ].join("\n");
+  const body = `${frontmatter}\n${trimmed}\n`;
   const abs = repoPath(relPath);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.writeFileSync(abs, body, "utf8");
 
-  const item: ContextItem = { slug, title: input.title, category: input.category, summary, createdAt, relPath, hasDraft: false };
+  const item: ContextItem = {
+    slug,
+    title: input.title,
+    category: input.category,
+    summary,
+    createdAt,
+    relPath,
+    hasDraft: false,
+    source,
+    ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}),
+  };
   writeIndex([item, ...items]);
   return item;
 }
@@ -100,7 +132,7 @@ export function saveDraft(slug: string, content: string): { relPath: string } {
   return { relPath };
 }
 
-const CATEGORY_SPEC_KIND: Record<ContextCategory, string> = {
+export const CATEGORY_SPEC_KIND: Record<ContextCategory, string> = {
   "business-workflow": "a business-workflow spec describing the actors, steps, and business rules involved, in the style of a lightweight product spec",
   "tech-guideline": "a tech/architecture guideline spec describing the convention or constraint being documented and when it applies",
   "domain-glossary": "a domain-glossary spec defining the key terms and their meanings",

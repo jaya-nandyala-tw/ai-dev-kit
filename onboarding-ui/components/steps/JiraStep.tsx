@@ -22,7 +22,7 @@ export function JiraStep({ onDone }: { onDone: () => void }) {
         <p className="flex items-center gap-2 mb-3">
           <span>🎫</span>
           <span className="text-sm font-semibold">Board</span>
-          <span className="mono text-xs text-[var(--muted-soft)]">jira_client/fetch_*.py</span>
+          <span className="mono text-xs text-[var(--muted-soft)]">atlassian_client/fetch_*.py</span>
         </p>
         <FileFormStep fileKey="jira-board" stepId="jira" onWritten={onDone} />
       </div>

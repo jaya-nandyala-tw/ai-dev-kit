@@ -5,7 +5,7 @@ on your team's board.
 GENERICIZED TEMPLATE — fill in BOARD_ID and PROJECT for your own Jira board.
 
 Run from the workspace root:
-    python -m jira_client.fetch_my_stories
+    python -m atlassian_client.fetch_my_stories
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ your team's board.
 GENERICIZED TEMPLATE — fill in BOARD_ID for your own Jira board.
 
 Run from the workspace root:
-    python -m jira_client.fetch_sprint_stories
+    python -m atlassian_client.fetch_sprint_stories
 """
 
 from __future__ import annotations

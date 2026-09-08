@@ -83,6 +83,19 @@ class SprintIssueCollection:
 
 
 @dataclass
+class ConfluencePage:
+    """A Confluence page, from a search result or a full content fetch."""
+
+    id: str
+    title: str
+    space_key: str
+    url: str
+    version: Optional[int] = None
+    excerpt: Optional[str] = None  # populated for search results
+    body: Optional[str] = None  # populated when full content is loaded
+
+
+@dataclass
 class StoryDetail:
     """Full detail of a single Jira issue for story planning.
 

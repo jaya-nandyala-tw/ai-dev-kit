@@ -264,12 +264,12 @@ const envFile: ManagedFileDef = {
   },
 };
 
-// ── jira_client board/project constants ─────────────────────────────────────
+// ── atlassian_client board/project constants ────────────────────────────────
 
 const jiraBoard: ManagedFileDef = {
   key: "jira-board",
   label: "Jira board/project constants",
-  relPaths: ["jira_client/fetch_my_stories.py", "jira_client/fetch_sprint_stories.py"],
+  relPaths: ["atlassian_client/fetch_my_stories.py", "atlassian_client/fetch_sprint_stories.py"],
   fields: [
     { name: "boardId", label: "Jira board ID", type: "text", placeholder: "42" },
     { name: "projectKey", label: "Jira project key", type: "text", placeholder: "PROJ" },
@@ -279,8 +279,8 @@ const jiraBoard: ManagedFileDef = {
     return readIfExists(relPath) ?? "";
   },
   parseCurrentValues: () => {
-    const my = readIfExists("jira_client/fetch_my_stories.py") ?? "";
-    const sprint = readIfExists("jira_client/fetch_sprint_stories.py") ?? "";
+    const my = readIfExists("atlassian_client/fetch_my_stories.py") ?? "";
+    const sprint = readIfExists("atlassian_client/fetch_sprint_stories.py") ?? "";
     const boardId = /BOARD_ID = (\d+)/.exec(my)?.[1] ?? /BOARD_ID = (\d+)/.exec(sprint)?.[1] ?? "0";
     const projectKey = /PROJECT = "([^"]*)"/.exec(my)?.[1] ?? "PROJ";
     return { boardId, projectKey };
@@ -288,15 +288,15 @@ const jiraBoard: ManagedFileDef = {
   buildProposed: (values) => {
     const boardId = String(values.boardId ?? "0").trim() || "0";
     const projectKey = String(values.projectKey ?? "PROJ").trim() || "PROJ";
-    const my = readIfExists("jira_client/fetch_my_stories.py") ?? "";
-    const sprint = readIfExists("jira_client/fetch_sprint_stories.py") ?? "";
+    const my = readIfExists("atlassian_client/fetch_my_stories.py") ?? "";
+    const sprint = readIfExists("atlassian_client/fetch_sprint_stories.py") ?? "";
     const myProposed = my
       .replace(/BOARD_ID = \d+.*/, `BOARD_ID = ${boardId}`)
       .replace(/PROJECT = "[^"]*".*/, `PROJECT = "${projectKey}"`);
     const sprintProposed = sprint.replace(/BOARD_ID = \d+.*/, `BOARD_ID = ${boardId}`);
     return {
-      "jira_client/fetch_my_stories.py": myProposed,
-      "jira_client/fetch_sprint_stories.py": sprintProposed,
+      "atlassian_client/fetch_my_stories.py": myProposed,
+      "atlassian_client/fetch_sprint_stories.py": sprintProposed,
     };
   },
 };

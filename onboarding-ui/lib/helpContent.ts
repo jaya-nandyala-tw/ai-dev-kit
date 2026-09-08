@@ -119,7 +119,7 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
     ],
     impact: [
       "Writes JIRA_BASE_URL, JIRA_API_TOKEN, and DEV_EMAIL into .env (your personal, gitignored file — never committed).",
-      "Writes BOARD_ID and PROJECT into jira_client/fetch_my_stories.py and fetch_sprint_stories.py.",
+      "Writes BOARD_ID and PROJECT into atlassian_client/fetch_my_stories.py and fetch_sprint_stories.py.",
     ],
     examples: [
       {

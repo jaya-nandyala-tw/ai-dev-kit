@@ -1,21 +1,18 @@
 """
-jira_client.py — JiraClient: reusable Atlassian REST API client.
+jira_client.py — JiraClient: reusable Jira Cloud REST API client.
 
-Supports Jira Cloud Agile (v1) and REST (v3) endpoints.
-Authentication: Basic Auth with email + API token.
-Retry logic: exponential backoff on HTTP 429.
+Supports Jira Cloud Agile (v1) and REST (v3) endpoints. Authentication and
+retry/error handling are shared with ConfluenceClient via AtlassianRestClient
+(see base_client.py): Basic Auth with email + API token, exponential backoff
+on HTTP 429.
 """
 
 from __future__ import annotations
 
-import time
-from datetime import datetime, timezone
 from typing import Any
 
-import requests
-from requests.auth import HTTPBasicAuth
-
 from . import config
+from .base_client import AtlassianClientError, AtlassianRestClient
 from .models import (
     Blocker,
     Issue,
@@ -29,8 +26,9 @@ from .utils import days_since, parse_jira_date
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-_MAX_RETRIES = 3
-_RETRY_BASE_DELAY = 1.0  # seconds
+# Kept as a distinct name for backwards compatibility with existing callers
+# (e.g. `except JiraClientError`) — Jira and Confluence share one error type.
+JiraClientError = AtlassianClientError
 
 _DONE_STATUSES = {"done", "closed", "resolved", "complete", "completed"}
 _IN_PROGRESS_STATUSES = {"in progress", "in review", "in development", "review"}
@@ -45,11 +43,7 @@ _STORY_POINT_FIELDS = (
 )
 
 
-class JiraClientError(Exception):
-    """Raised for unrecoverable Jira API errors."""
-
-
-class JiraClient:
+class JiraClient(AtlassianRestClient):
     """Thin, reusable wrapper around the Jira Cloud REST and Agile APIs.
 
     Usage::
@@ -63,92 +57,7 @@ class JiraClient:
     """
 
     def __init__(self) -> None:
-        self._base_url = config.base_url()
-        self._auth = HTTPBasicAuth(config.user_email(), config.api_token())
-        self._session = requests.Session()
-        self._session.auth = self._auth
-        self._session.headers.update(
-            {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            }
-        )
-
-    # ── Internal helpers ──────────────────────────────────────────────────────
-
-    def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
-        """Execute a GET request with retry on 429.
-
-        Args:
-            path: API path relative to the base URL (must start with ``/``).
-            params: Optional query-string parameters.
-
-        Returns:
-            Parsed JSON response body.
-
-        Raises:
-            JiraClientError: On 401, 403, 404, or unrecoverable errors.
-        """
-        url = f"{self._base_url}{path}"
-        return self._request_with_retry("GET", url, params=params)
-
-    def _post(self, path: str, body: dict[str, Any]) -> Any:
-        """Execute a POST request with retry on 429.
-
-        Args:
-            path: API path relative to the base URL.
-            body: JSON-serialisable request body.
-
-        Returns:
-            Parsed JSON response body (or ``None`` for 204 No Content).
-        """
-        url = f"{self._base_url}{path}"
-        return self._request_with_retry("POST", url, json=body)
-
-    def _request_with_retry(self, method: str, url: str, **kwargs: Any) -> Any:
-        """Send an HTTP request, retrying up to *_MAX_RETRIES* times on 429."""
-        delay = _RETRY_BASE_DELAY
-        for attempt in range(_MAX_RETRIES + 1):
-            response = self._session.request(method, url, **kwargs)
-
-            if response.status_code == 429:
-                retry_after = float(response.headers.get("Retry-After", delay))
-                if attempt < _MAX_RETRIES:
-                    time.sleep(retry_after)
-                    delay *= 2
-                    continue
-                raise JiraClientError(
-                    "Rate limit exceeded and max retries reached. "
-                    "Try again in a few minutes."
-                )
-
-            if response.status_code == 401:
-                raise JiraClientError(
-                    "Authentication failed (401). Check JIRA_API_TOKEN and DEV_EMAIL."
-                )
-            if response.status_code == 403:
-                raise JiraClientError(
-                    f"Permission denied (403) for {url}. "
-                    "Ensure your account has the required Jira permissions."
-                )
-            if response.status_code == 404:
-                raise JiraClientError(
-                    f"Resource not found (404): {url}. "
-                    "Verify board ID, sprint ID, or issue key."
-                )
-            if response.status_code == 410:
-                raise JiraClientError(
-                    f"Endpoint removed (410): {url}. "
-                    "The Jira Cloud API has been updated — this endpoint no longer exists."
-                )
-
-            response.raise_for_status()
-
-            if response.status_code == 204 or not response.content:
-                return None
-            return response.json()
-
-        raise JiraClientError("Unexpected retry loop exit.")  # pragma: no cover
+        super().__init__(config.base_url())
 
     # ── Sprint helpers ────────────────────────────────────────────────────────
 

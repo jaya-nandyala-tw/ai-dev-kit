@@ -12,11 +12,13 @@
   "dependencies": {
     "diff": "9.0.0",
     "next": "15.5.25",
+    "pdf-parse": "1.1.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@types/node": "22.20.1",
+    "@types/pdf-parse": "1.1.5",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.7",
     "autoprefixer": "10.5.5",

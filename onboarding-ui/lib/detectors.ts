@@ -131,13 +131,20 @@ function talisman(): StepStatusEntry {
 
 function jira(state: OnboardingState): StepStatusEntry {
   if (!state.profile?.usesJira) return { id: "jira", status: "locked", lockedReason: "Not needed for your stack" };
-  const env = read(".env");
-  const hasEnv = /JIRA_BASE_URL=\S/.test(env) && /JIRA_API_TOKEN=\S/.test(env);
-  const my = read("jira_client/fetch_my_stories.py");
+  const hasEnv = isAtlassianConfigured();
+  const my = read("atlassian_client/fetch_my_stories.py");
   const hasBoard = /BOARD_ID = [1-9]/.test(my);
   if (hasEnv && hasBoard) return { id: "jira", status: "done" };
   if (hasEnv || hasBoard) return { id: "jira", status: "partial" };
   return { id: "jira", status: "not-started" };
+}
+
+// Confluence reuses the same Jira/Atlassian credentials (see atlassian_client/config.py) — this
+// is the single source of truth for "can the Acquire Context page's Confluence tab be enabled",
+// used both by the jira() step status above and by the /api/context/confluence/status route.
+export function isAtlassianConfigured(): boolean {
+  const env = read(".env");
+  return /JIRA_BASE_URL=\S/.test(env) && /JIRA_API_TOKEN=\S/.test(env);
 }
 
 export function computeAllStatuses(): { state: OnboardingState; statuses: Record<string, StepStatusEntry> } {

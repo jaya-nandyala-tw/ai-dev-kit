@@ -2,10 +2,10 @@
 agent.py — CLI agent loop with natural-language intent parsing.
 
 Run:
-    python -m jira_client.agent
+    python -m atlassian_client.agent
 
 Or directly:
-    python jira_client/agent.py
+    python atlassian_client/agent.py
 """
 
 from __future__ import annotations
@@ -13,8 +13,15 @@ from __future__ import annotations
 import re
 
 from . import config
+from .confluence_client import ConfluenceClient, ConfluenceClientError
 from .jira_client import JiraClient, JiraClientError
-from .utils import print_blockers, print_issues, print_sprint_report, print_transitions
+from .utils import (
+    print_blockers,
+    print_confluence_pages,
+    print_issues,
+    print_sprint_report,
+    print_transitions,
+)
 
 # ── Intent patterns ───────────────────────────────────────────────────────────
 # Each entry: (compiled regex, handler name)
@@ -26,6 +33,10 @@ _COMMENT_RE = re.compile(
     r"add\s+comment\s+to\s+([A-Z][A-Z0-9]+-\d+)[:\s]+(.+)", re.IGNORECASE
 )
 _TRANSITION_RE = re.compile(r"move\s+([A-Z][A-Z0-9]+-\d+)\s+to\s+(.+)", re.IGNORECASE)
+_CONFLUENCE_SEARCH_RE = re.compile(
+    r"(?:search\s+)?confluence\s+(?:for\s+)?(.+)", re.IGNORECASE
+)
+_CONFLUENCE_PAGE_RE = re.compile(r"confluence\s+page\s+(\S+)", re.IGNORECASE)
 
 _HELP_TEXT = """\
 Available commands:
@@ -38,6 +49,8 @@ Available commands:
   move <KEY> to <Status>              Transition an issue to a new status
   transitions <KEY>                   Show available transitions for an issue
   add comment to <KEY>: <text>        Add a comment to an issue
+  confluence <query>                  Search Confluence pages by text
+  confluence page <id>                Show the full content of a Confluence page
   help                                Show this message
   exit / quit                         Exit the agent
 """
@@ -50,6 +63,16 @@ _state: dict[str, int | None] = {
     "sprint_id": None,
 }
 _DEFAULT_PROJECT = "PROJ"
+
+# Lazily instantiated — most sessions never touch Confluence.
+_confluence_client: ConfluenceClient | None = None
+
+
+def _get_confluence_client() -> ConfluenceClient:
+    global _confluence_client
+    if _confluence_client is None:
+        _confluence_client = ConfluenceClient()
+    return _confluence_client
 
 
 def _require_board(client: JiraClient, raw: str) -> int:
@@ -164,6 +187,29 @@ def _handle_add_comment(client: JiraClient, raw: str) -> None:
     print(f"  ✓ Comment added to {issue_key}.")
 
 
+def _handle_confluence_page(client: JiraClient, raw: str) -> None:
+    m = _CONFLUENCE_PAGE_RE.search(raw)
+    if not m:
+        print("  Usage: confluence page <id>")
+        return
+    page_id = m.group(1)
+    page = _get_confluence_client().get_page_content(page_id)
+    print(f"\n  {page.title}  [{page.space_key}]\n  {page.url}\n")
+    print(page.body or "(empty page)")
+    print()
+
+
+def _handle_confluence_search(client: JiraClient, raw: str) -> None:
+    m = _CONFLUENCE_SEARCH_RE.search(raw)
+    if not m:
+        print("  Usage: confluence <search text>")
+        return
+    query = m.group(1).strip()
+    pages = _get_confluence_client().search_pages(query)
+    print(f"\n  {len(pages)} Confluence page(s) matching '{query}'\n")
+    print_confluence_pages(pages)
+
+
 _PROJECT_RE = re.compile(r"\bproject\s+([A-Z][A-Z0-9]+)\b", re.IGNORECASE)
 _STATUS_WORDS_RE = re.compile(
     r"\b(in[- ]progress|in[- ]review|to[- ]?do|done|blocked)\b", re.IGNORECASE
@@ -214,6 +260,9 @@ def _handle_my_issues(client: JiraClient, raw: str) -> None:
 # ── Intent router ─────────────────────────────────────────────────────────────
 
 _ROUTES: list[tuple[re.Pattern[str], object]] = [
+    # 'confluence page <id>' must come before the generic confluence search route
+    (re.compile(r"\bconfluence\s+page\b", re.I), _handle_confluence_page),
+    (re.compile(r"\bconfluence\b", re.I), _handle_confluence_search),
     (re.compile(r"\badd\s+comment\b", re.I), _handle_add_comment),
     (re.compile(r"\bmove\b.+\bto\b", re.I), _handle_transition),
     (re.compile(r"\btransitions?\b", re.I), _handle_transitions),
@@ -273,7 +322,7 @@ def main() -> None:
     config.validate()
     client = JiraClient()
 
-    print("Jira Agent — type 'help' for commands, 'exit' to quit.\n")
+    print("Atlassian Agent (Jira + Confluence) — type 'help' for commands, 'exit' to quit.\n")
 
     while True:
         try:

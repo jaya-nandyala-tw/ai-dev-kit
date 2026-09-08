@@ -35,9 +35,9 @@ Open http://localhost:3000.
 - **Pre-commit hooks, Talisman** — one-click actions that run the real scripts and stream their
   output, with an inline input box for any prompt they emit.
 - **Jira integration** (only shown if your stack uses Jira) — board ID, project key, base URL, and
-  API token for `jira_client/`.
+  API token for `atlassian_client/`.
 - **Recommended Resources** — flags agents/skills/instructions/scripts that don't apply
-  to your stack (e.g. `jira_client/` if you don't use Jira, `lambdas.instructions.md` if you have
+  to your stack (e.g. `atlassian_client/` if you don't use Jira, `lambdas.instructions.md` if you have
   no workers) and lets you remove them via `git rm` (reversible pre-commit via `git status`/
   `git checkout`, since nothing here is destructive until you actually commit).
 

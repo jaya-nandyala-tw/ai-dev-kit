@@ -35,7 +35,7 @@ def validate() -> None:
         print(
             "ERROR: The following required environment variables are not set:\n"
             + "\n".join(f"  - {k}" for k in missing)
-            + "\n\nCopy jira_client/.env.example → .env and fill in your Jira credentials.",
+            + "\n\nCopy atlassian_client/.env.example → .env and fill in your Atlassian credentials.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -54,8 +54,18 @@ def base_url() -> str:
     return os.environ["JIRA_BASE_URL"].rstrip("/")
 
 
+def confluence_base_url() -> str:
+    """Return the Confluence base URL.
+
+    Defaults to ``<JIRA_BASE_URL>/wiki``, which is correct for the common
+    case where Jira and Confluence live on the same Atlassian Cloud site.
+    Set CONFLUENCE_BASE_URL to override when Confluence is hosted elsewhere.
+    """
+    return os.getenv("CONFLUENCE_BASE_URL", f"{base_url()}/wiki").rstrip("/")
+
+
 def api_token() -> str:
-    """Return the Atlassian API token."""
+    """Return the Atlassian API token (shared by Jira and Confluence)."""
     return os.environ["JIRA_API_TOKEN"]
 
 

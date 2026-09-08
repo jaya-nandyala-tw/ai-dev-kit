@@ -9,7 +9,7 @@ from typing import Any
 
 from tabulate import tabulate
 
-from .models import Blocker, Issue, SprintReport
+from .models import Blocker, ConfluencePage, Issue, SprintReport
 
 # ── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -134,3 +134,21 @@ def print_transitions(transitions: list[dict[str, str]]) -> None:
             rows, headers=["ID", "Transition", "Target Status"], tablefmt=_TABLE_FMT
         )
     )
+
+
+def print_confluence_pages(pages: list[ConfluencePage]) -> None:
+    """Pretty-print a list of Confluence pages (search results) as a table."""
+    if not pages:
+        print("No pages found.")
+        return
+    rows: list[list[Any]] = [
+        [
+            p.id,
+            p.title[:60] + ("…" if len(p.title) > 60 else ""),
+            p.space_key,
+            (p.excerpt or "")[:60] + ("…" if p.excerpt and len(p.excerpt) > 60 else ""),
+        ]
+        for p in pages
+    ]
+    headers = ["ID", "Title", "Space", "Excerpt"]
+    print(tabulate(rows, headers=headers, tablefmt=_TABLE_FMT))

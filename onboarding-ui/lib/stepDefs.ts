@@ -76,7 +76,7 @@ export const STEP_DEFS: StepDef[] = [
     id: "jira",
     title: "Jira integration",
     shortTitle: "Jira",
-    description: "Board ID, project key, base URL, and API token for jira_client/.",
+    description: "Board ID, project key, base URL, and API token for atlassian_client/.",
     kind: "file-form",
     group: "optional",
     icon: "🎫",

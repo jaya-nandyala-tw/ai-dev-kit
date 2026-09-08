@@ -48,11 +48,11 @@ const RULES: Rule[] = [
     why: "Worker/lambda-only conventions — no use without worker/lambda functions.",
   },
   {
-    key: "jira-client",
-    paths: ["jira_client"],
+    key: "atlassian-client",
+    paths: ["atlassian_client"],
     removable: true,
     relevant: (p) => p.usesJira,
-    why: "Jira Cloud API client + CLI — no use if your team doesn't track tickets in Jira.",
+    why: "Jira + Confluence Cloud API client (shared Atlassian token) + CLI — no use if your team doesn't track tickets in Jira Cloud.",
   },
 ];
 

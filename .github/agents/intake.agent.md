@@ -62,7 +62,7 @@ For every other type, continue to Ticket Auto-Fetch / Intake below.
 
 ## Ticket Auto-Fetch
 
-<!-- TEMPLATE: this section assumes a Jira-backed `jira_client/` module (included in this starter kit,
+<!-- TEMPLATE: this section assumes a Jira-backed `atlassian_client/` module (included in this starter kit,
      genericized). If your team uses Linear, GitHub Issues, or another tracker, swap this section for
      the equivalent client/API and adjust the key pattern below. -->
 
@@ -74,10 +74,10 @@ full description:
    - URL: `https://<your-issue-tracker-instance>/browse/TICKET-8083` → parse `TICKET-8083` from path
    - Pattern: any string matching `[A-Z]+-\d+` or a URL containing `/browse/[A-Z]+-\d+`
 
-2. **Fetch from your tracker** using the `jira_client/` module:
+2. **Fetch from your tracker** using the `atlassian_client/` module:
    ```bash
    cd "$REPO_ROOT" && python -c "
-   from jira_client import JiraClient, config
+   from atlassian_client import JiraClient, config
    config.validate()
    client = JiraClient()
    story = client.get_issue('TICKET-XXXX')

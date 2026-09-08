@@ -74,7 +74,7 @@ guardrails in other agent harnesses:
 scripts/           multi-repo clone/pull — gets a workstream's real repos onto disk for agents to act on
 config/            repos.json — single source of truth for which repos this harness manages
 onboarding-ui/     local-only guided setup dashboard — the click-through alternative to this checklist
-jira_client/       reusable Jira Cloud API client + NL CLI agent
+atlassian_client/  reusable Jira + Confluence (read-only) Cloud API client + NL CLI agent
 memories/          convention for durable repo indexes + ephemeral per-story checkpoints
 ```
 
@@ -97,7 +97,7 @@ as a reference implementation of that pattern, not a required format.
 | `scripts/` | Multi-repo clone/pull — the substrate that gets a multi-repo workstream's real code onto disk so path-scoped instructions and agents have something real to act on. |
 | `config/repos.json` | Single source of truth for which repos this harness clones/pulls — edit by hand or populate via `./scripts/clone-repos.sh --select` (GitHub CLI-backed multi-select). |
 | `onboarding-ui/` | Local-only Next.js dashboard that turns this README's adoption checklist and `ONBOARDING.md`'s setup steps into a click-through flow — diff preview before every write, live-streamed script execution, and a stack-aware "Recommended Resources" panel. `cd onboarding-ui && npm install && npm run dev`. |
-| `jira_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs, with a natural-language CLI agent — only relevant if your team tracks tickets in Jira Cloud; optional and removable otherwise. |
+| `atlassian_client/` | A reusable, env-var-configured Python client for the Jira Cloud REST/Agile APIs and read-only Confluence Cloud search/page-content, sharing one Atlassian token, with a natural-language CLI agent — only relevant if your team tracks tickets in Jira Cloud; optional and removable otherwise. |
 | `memories/` | The convention (not the content) for durable per-repo indexes (`memories/repo/`) and ephemeral per-story checkpoints (`memories/session/`) that agents read/write. |
 | `harness-engineering.md` | The methodology behind this harness — principles, context-rot failure modes, and a worked example of applying them. |
 | `STORY-IMPLEMENTATION-GUIDE.md` | How to actually run a story through the agent workflow, phase by phase. |
@@ -125,7 +125,7 @@ excluded outright rather than half-genericized.
    - `config/repos.json` — fill in your own GitHub org and repo list (by hand, or run
      `./scripts/clone-repos.sh --select --org <your-org>` to populate it via the GitHub CLI). This
      single file drives `clone-repos.sh` and `pull-all.sh` — no need to edit those scripts directly.
-   - `jira_client/fetch_my_stories.py` / `fetch_sprint_stories.py` — fill in your own board ID/project
+   - `atlassian_client/fetch_my_stories.py` / `fetch_sprint_stories.py` — fill in your own board ID/project
      key, or delete them if you don't use Jira boards this way.
    - `.github/workflows/ci.yml` — replace the placeholder steps with your real lint/test commands.
 3. **Set up your environment**: copy `.env.template` (create your own — this kit doesn't ship product

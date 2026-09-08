@@ -24,6 +24,6 @@ If content can't be generalized without losing its value, it probably doesn't be
 
 Small clarifications and bug fixes can go straight to a PR. Larger behavioral changes (new guardrails, changed phase flow, new required fields) should get an issue first so other adopting teams can weigh in — a change here potentially breaks every downstream fork's workflow.
 
-## Dev tooling changes (`scripts/`, `jira_client/`)
+## Dev tooling changes (`scripts/`, `atlassian_client/`)
 
 Keep these framework/stack-agnostic where possible. If a script only makes sense for one stack (e.g. AWS-specific), say so clearly in its header comment rather than presenting it as universal.
