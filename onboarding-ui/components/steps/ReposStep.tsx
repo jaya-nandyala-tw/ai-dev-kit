@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchFileDiff, fetchFileSchema, fetchGhRepos, writeFile } from "@/lib/apiClient";
+import { useStepState } from "@/lib/useStepState";
 import { DiffView } from "@/components/DiffView";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RunStep } from "@/components/steps/RunStep";
@@ -11,6 +12,11 @@ import { toast } from "@/lib/toast";
 import type { DiffResult } from "@/types";
 
 type Row = { name: string; visibility: string; selected: boolean; tier: "core" | "worker" };
+type ReposStepState = {
+  org: string | undefined;
+  rows: Row[];
+  repoFilter: string;
+};
 
 // Three real phases (connect → select → clone), each a real git/network operation — numbered
 // so the multi-stage nature of this step reads clearly instead of as one long stack of panels.
@@ -26,60 +32,70 @@ function PhaseLabel({ n, title }: { n: string; title: string }) {
 }
 
 export function ReposStep({ onWritten }: { onWritten: () => void }) {
-  const [org, setOrg] = useState("");
-  const [rows, setRows] = useState<Row[]>([]);
+  const [persistedState, setPersistedState] = useStepState<ReposStepState>("repos-config", {
+    org: "",
+    rows: [],
+    repoFilter: "",
+  });
+
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [ghError, setGhError] = useState<string | null>(null);
   const [diffs, setDiffs] = useState<DiffResult[] | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [written, setWritten] = useState(false);
   const [scope, setScope] = useState<"--all" | "--core-only">("--core-only");
-  const [repoFilter, setRepoFilter] = useState("");
 
   useEffect(() => {
     fetchFileSchema("repos-json").then((res) => {
       const current = res.currentValues as { github?: { org?: string } };
-      if (current?.github?.org && current.github.org !== "<your-github-org>") {
-        setOrg(current.github.org);
+      const org = current?.github?.org;
+      if (org && org !== "<your-github-org>") {
+        setPersistedState((prev) => ({ ...prev, org }));
         setWritten(true);
       }
     });
-  }, []);
+  }, [setPersistedState]);
 
   async function loadRepos() {
-    if (!org.trim()) {
+    if (!persistedState.org?.trim()) {
       setGhError("Enter a GitHub org first.");
       toast.error("Enter a GitHub org first.");
       return;
     }
     setGhError(null);
     setLoadingRepos(true);
-    const res = await fetchGhRepos(org);
+    const res = await fetchGhRepos(persistedState.org);
     setLoadingRepos(false);
     if (res.error || !res.repos) {
       setGhError(res.error ?? "Could not load repos");
       toast.error("Could not load repos via gh");
       return;
     }
-    setRows(res.repos.map((r) => ({ name: r.name, visibility: r.visibility, selected: false, tier: "core" })));
-    setRepoFilter("");
-    toast.success(`Loaded ${res.repos.length} repos from ${org}`);
+    setPersistedState((prev) => ({
+      ...prev,
+      rows: res.repos!.map((r) => ({ name: r.name, visibility: r.visibility, selected: false, tier: "core" as const })),
+      repoFilter: "",
+    }));
+    toast.success(`Loaded ${res.repos!.length} repos from ${persistedState.org}`);
   }
 
-  const filteredRows = rows
+  const filteredRows = persistedState.rows
     .map((r, i) => ({ r, i }))
-    .filter(({ r }) => r.name.toLowerCase().includes(repoFilter.trim().toLowerCase()));
+    .filter(({ r }) => r.name.toLowerCase().includes(persistedState.repoFilter.trim().toLowerCase()));
 
   function toggle(i: number, patch: Partial<Row>) {
-    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+    setPersistedState((prev) => ({
+      ...prev,
+      rows: prev.rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)),
+    }));
   }
 
-  const selectedCount = rows.filter((r) => r.selected).length;
+  const selectedCount = persistedState.rows.filter((r) => r.selected).length;
 
   function buildValues() {
-    const selected = rows.filter((r) => r.selected);
+    const selected = persistedState.rows.filter((r) => r.selected);
     return {
-      github: { org, protocol: "ssh" as const },
+      github: { org: persistedState.org, protocol: "ssh" as const },
       repos: selected.map((r) => ({ name: r.name, tier: r.tier })),
     };
   }
@@ -107,8 +123,8 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
         <PhaseLabel n="01" title="Connect to GitHub" />
         <div className="flex gap-2">
           <input
-            value={org}
-            onChange={(e) => setOrg(e.target.value)}
+            value={persistedState.org}
+            onChange={(e) => setPersistedState((prev) => ({ ...prev, org: e.target.value }))}
             onKeyDown={(e) => e.key === "Enter" && loadRepos()}
             placeholder="your-github-org"
             className="field-input flex-1"
@@ -117,7 +133,7 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
             variant="secondary"
             onClick={loadRepos}
             loading={loadingRepos}
-            disabled={!org.trim()}
+            disabled={!persistedState.org?.trim()}
             icon={<span>🐙</span>}
           >
             Load via gh
@@ -126,17 +142,17 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
         {ghError && <p className="text-sm text-[var(--danger)] mt-2">{ghError}</p>}
       </div>
 
-      {rows.length > 0 && (
+      {persistedState.rows.length > 0 && (
         <div className="panel-flat p-4 anim-fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <PhaseLabel n="02" title="Select repos" />
             <span className="mono text-xs" style={{ color: "var(--accent)" }}>
-              {filteredRows.length} of {rows.length} found · {selectedCount} selected
+              {filteredRows.length} of {persistedState.rows.length} found · {selectedCount} selected
             </span>
           </div>
           <input
-            value={repoFilter}
-            onChange={(e) => setRepoFilter(e.target.value)}
+            value={persistedState.repoFilter}
+            onChange={(e) => setPersistedState((prev) => ({ ...prev, repoFilter: e.target.value }))}
             placeholder="Search repos, e.g. commercial-us-hcp-dp"
             className="field-input w-full mb-3"
           />
@@ -154,7 +170,7 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
           </div>
           <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
             {filteredRows.length === 0 && (
-              <p className="text-sm opacity-70 py-2">No repos match &quot;{repoFilter}&quot;.</p>
+              <p className="text-sm opacity-70 py-2">No repos match &quot;{persistedState.repoFilter}&quot;.</p>
             )}
             {filteredRows.map(({ r, i }) => (
               <div

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/WizardShell";
+import { StepNavigationHeader } from "@/components/StepNavigationHeader";
 import { getAdjacentStepIds, getStepDef, getVisibleSteps } from "@/lib/stepDefs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StepHelpButton } from "@/components/StepHelpButton";
@@ -72,6 +73,13 @@ export default function StepPage() {
             className="anim-fade-in-up max-w-7xl mx-auto flex flex-col gap-5"
             style={{ height: paneHeight ? `${paneHeight}px` : undefined }}
           >
+            {/* Navigation header — sticky horizontal step navigation. Never scrolls. */}
+            <StepNavigationHeader
+              currentStepId={stepId}
+              profile={profile as unknown as Record<string, boolean> | null}
+              statuses={statuses}
+            />
+
             {/* Header — progress rail + step info card. Never scrolls. */}
             <div className="shrink-0">
               <ProgressRail currentStepId={stepId} profile={profile} statuses={statuses} />
