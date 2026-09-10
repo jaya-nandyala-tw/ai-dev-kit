@@ -71,7 +71,19 @@ export function GenericFileForm({
               placeholder={field.placeholder}
               value={String(values[field.name] ?? "")}
               onChange={(e) => onChange(field.name, e.target.value)}
+              {...(field.options?.length ? { list: `${field.name}-options` } : {})}
             />
+            {/* Native datalist — keeps the field a plain freeform text input (any value can
+                still be typed) while surfacing configured repos as clickable suggestions. */}
+            {field.options && field.options.length > 0 && (
+              <datalist id={`${field.name}-options`}>
+                {field.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </datalist>
+            )}
             {field.help && <p className="text-xs text-[var(--muted-soft)] mt-1">{field.help}</p>}
           </div>
         );

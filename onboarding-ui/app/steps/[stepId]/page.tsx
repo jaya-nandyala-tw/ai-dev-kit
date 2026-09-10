@@ -13,12 +13,11 @@ import { Button } from "@/components/ui/Button";
 import { PrerequisitesStep } from "@/components/steps/PrerequisitesStep";
 import { QuestionnaireStep } from "@/components/steps/QuestionnaireStep";
 import { ReposStep } from "@/components/steps/ReposStep";
-import { RunStep } from "@/components/steps/RunStep";
 import { FileFormStep } from "@/components/steps/FileFormStep";
+import { PreCommitStep } from "@/components/steps/PreCommitStep";
 import { JiraStep } from "@/components/steps/JiraStep";
 
 const FILE_FORM_KEY_BY_STEP: Record<string, string> = {
-  "pre-commit-config": "pre-commit-config",
   "sensor-table": "global-instructions",
 };
 
@@ -110,14 +109,8 @@ export default function StepPage() {
 
               {def.kind === "repos" && <ReposStep onWritten={refresh} />}
 
-              {def.kind === "run" && stepId === "pre-commit-hooks" && (
-                <RunStep
-                  scriptKey="pre-commit-install"
-                  stepId="pre-commit-hooks"
-                  label="Install pre-commit + hook"
-                  confirmBody="Runs: pip3 install pre-commit && pre-commit install"
-                  onDone={refresh}
-                />
+              {def.kind === "pre-commit" && (
+                <PreCommitStep hooksStatus={statuses["pre-commit-hooks"]} onDone={refresh} />
               )}
 
               {def.kind === "file-form" && stepId !== "jira" && FILE_FORM_KEY_BY_STEP[stepId] && (

@@ -35,12 +35,6 @@ const SCRIPTS: Record<string, ScriptDef> = {
     baseArgs: ["-c", "pip3 install pre-commit && pre-commit install"],
     cwd: REPO_ROOT,
   },
-  "talisman-init": {
-    label: "Generate .talismanrc checksums",
-    command: "talisman",
-    baseArgs: ["-i"],
-    cwd: REPO_ROOT,
-  },
   "git-rm": {
     label: "Remove files not needed for your stack",
     command: "git",

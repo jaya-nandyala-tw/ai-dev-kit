@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     key: def.key,
     label: def.label,
     relPaths: def.relPaths,
-    fields: def.fields,
+    fields: def.getFields ? def.getFields() : def.fields,
     currentValues: def.parseCurrentValues(),
   });
 }

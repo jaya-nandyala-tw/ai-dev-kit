@@ -3,7 +3,8 @@ import path from "node:path";
 import { repoPath } from "./paths";
 import { buildDiff, hashContent } from "./diff";
 import * as T from "./templates";
-import type { DiffResult, FieldSchema } from "@/types";
+import { readState } from "./stateStore";
+import type { DiffResult, FieldSchema, ProfileAnswers } from "@/types";
 
 export type ManagedFileDef = {
   key: string;
@@ -13,6 +14,10 @@ export type ManagedFileDef = {
    * treatment — there's no meaningful "shipped baseline" to compare a dev's own .env against. */
   personal?: boolean;
   fields: FieldSchema[];
+  /** Overrides `fields` when present — for schemas whose `options` (dropdown suggestions)
+   * depend on runtime state (e.g. the repos configured in config/repos.json) rather than being
+   * fixed at module load. */
+  getFields?: () => FieldSchema[];
   baseline: (relPath: string) => string;
   parseCurrentValues: () => Record<string, unknown>;
   buildProposed: (values: Record<string, unknown>) => Record<string, string>;
@@ -21,6 +26,23 @@ export type ManagedFileDef = {
 function readIfExists(relPath: string): string | null {
   const abs = repoPath(relPath);
   return fs.existsSync(abs) ? fs.readFileSync(abs, "utf8") : null;
+}
+
+// ── shared: repos configured in "Configure & clone repos" ───────────────────
+// Used to offer real directory names as dropdown suggestions instead of empty text inputs
+// (e.g. pre-commit-config's serviceDir/workersGlob/iacPrefix fields below).
+
+type ConfiguredRepo = { name: string; tier: "core" | "worker" };
+
+function readConfiguredRepos(): ConfiguredRepo[] {
+  const raw = readIfExists("config/repos.json");
+  if (!raw) return [];
+  try {
+    const doc = JSON.parse(raw) as { repos?: ConfiguredRepo[] };
+    return doc.repos ?? [];
+  } catch {
+    return [];
+  }
 }
 
 // ── CODEOWNERS ──────────────────────────────────────────────────────────────
@@ -84,6 +106,46 @@ const preCommitConfig: ManagedFileDef = {
     { name: "workersGlob", label: "Workers/lambdas glob (under codebase/)", type: "text", placeholder: "workers/.*" },
     { name: "iacPrefix", label: "IaC repo directory prefix (under codebase/) — leave blank if you have no IaC repo", type: "text", placeholder: "infra" },
   ],
+  // Dropdown suggestions come from config/repos.json (the "Configure & clone repos" step) rather
+  // than being fixed at module load, since which repos exist is only known at runtime — the
+  // fields themselves stay freeform text inputs so a custom value can still be typed.
+  getFields: () => {
+    const repos = readConfiguredRepos();
+    const coreOptions = repos.filter((r) => r.tier === "core").map((r) => ({ value: r.name, label: r.name }));
+    const workerRepos = repos.filter((r) => r.tier === "worker");
+    const workerOptions = [
+      ...(workerRepos.length > 1 ? [{ value: "workers/.*", label: "workers/.* (all worker repos below)" }] : []),
+      ...workerRepos.map((r) => ({ value: r.name, label: r.name })),
+    ];
+    const allOptions = repos.map((r) => ({ value: r.name, label: `${r.name} (${r.tier})` }));
+    const pickHelp = repos.length > 0 ? "Pick from your configured repos, or type your own." : undefined;
+    return [
+      {
+        name: "serviceDir",
+        label: "Core service directory name (under codebase/)",
+        type: "text",
+        placeholder: "billing-service",
+        options: coreOptions,
+        help: coreOptions.length > 0 ? pickHelp : undefined,
+      },
+      {
+        name: "workersGlob",
+        label: "Workers/lambdas glob (under codebase/)",
+        type: "text",
+        placeholder: "workers/.*",
+        options: workerOptions,
+        help: workerOptions.length > 0 ? pickHelp : undefined,
+      },
+      {
+        name: "iacPrefix",
+        label: "IaC repo directory prefix (under codebase/) — leave blank if you have no IaC repo",
+        type: "text",
+        placeholder: "infra",
+        options: allOptions,
+        help: allOptions.length > 0 ? pickHelp : undefined,
+      },
+    ];
+  },
   baseline: () => T.PRE_COMMIT_CONFIG_BASELINE,
   parseCurrentValues: () => {
     const current = readIfExists(".pre-commit-config.yaml") ?? T.PRE_COMMIT_CONFIG_BASELINE;
@@ -145,6 +207,30 @@ function renderSensorTable(rows: SensorRow[]): string {
   return header + rows.map((r) => `| ${r.pattern} | ${r.command} | ${r.cwd} |`).join("\n") + "\n";
 }
 
+// Each shipped placeholder row is tagged with the profile flag (from the "Tell us about your
+// stack" step) that determines whether it's actually relevant. `null` means "no dependency —
+// every team needs this one" (the core python service + its tests).
+const SENSOR_ROW_RELEVANCE: Array<{ match: (pattern: string) => boolean; profileKey: keyof ProfileAnswers | null }> = [
+  { match: (p) => p.includes("ui/src"), profileKey: "buildsFrontend" },
+  { match: (p) => p.includes("<iac-module>") || p.includes("iac"), profileKey: "hasIac" },
+  { match: (p) => p.includes("<function>") || p.includes("<shared-layer>"), profileKey: "hasWorkers" },
+];
+
+/** Drops shipped placeholder rows that don't apply to this team's stack (e.g. no Terraform row
+ * if they said they have no IaC repo) — mirrors the same "don't ship dead config" pattern
+ * already used for the Terraform hook block in .pre-commit-config.yaml. Only ever touches rows
+ * that are still exactly the shipped placeholders; a table the user has already started
+ * customizing (real paths swapped in) is left untouched so nothing they typed gets silently
+ * removed. */
+function filterPlaceholderRowsForProfile(rows: SensorRow[], profile: ProfileAnswers | null): SensorRow[] {
+  if (!profile) return rows;
+  return rows.filter((r) => {
+    const rule = SENSOR_ROW_RELEVANCE.find((rule) => rule.match(r.pattern));
+    if (!rule || !rule.profileKey) return true;
+    return profile[rule.profileKey];
+  });
+}
+
 const globalInstructions: ManagedFileDef = {
   key: "global-instructions",
   label: "Sensor Dispatch Table",
@@ -163,8 +249,13 @@ const globalInstructions: ManagedFileDef = {
   ],
   baseline: () => T.GLOBAL_INSTRUCTIONS_BASELINE,
   parseCurrentValues: () => {
-    const current = readIfExists(".github/instructions/global.instructions.md") ?? T.GLOBAL_INSTRUCTIONS_BASELINE;
-    return { rows: parseSensorTable(current) };
+    const current = readIfExists(".github/instructions/global.instructions.md");
+    const rows = parseSensorTable(current ?? T.GLOBAL_INSTRUCTIONS_BASELINE);
+    // Only pre-trim rows the first time this step is opened (file not written yet) — once
+    // written, whatever rows are on disk are the source of truth as-is.
+    const stillDefault = !current;
+    const relevantRows = stillDefault ? filterPlaceholderRowsForProfile(rows, readState().profile) : rows;
+    return { rows: relevantRows };
   },
   buildProposed: (values) => {
     const rows = (values.rows as SensorRow[] | undefined) ?? [];

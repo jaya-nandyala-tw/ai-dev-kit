@@ -64,13 +64,14 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
     ],
   },
 
-  "pre-commit-hooks": {
+  "pre-commit": {
     why: [
       "This is the one real automated guardrail shared by humans and agents alike — it catches lint/format/security issues before they're committed, not after a PR is already open.",
+      "The hooks ship with placeholder path globs (<service>, <lambdas-or-workers>) that match nothing on disk — until you fill in your team's real directory names, the checks above silently run against zero files.",
     ],
     impact: [
-      "Runs: pip3 install pre-commit && pre-commit install.",
-      "Installs the pre-commit tool and writes a git hook into .git/hooks/pre-commit in this repo only — no other repo is touched.",
+      "Install: runs pip3 install pre-commit && pre-commit install, writing a git hook into .git/hooks/pre-commit in this repo only — no other repo is touched. Skipped automatically if the hook is already detected on disk.",
+      "Globs: writes .pre-commit-config.yaml — specifically the files: glob on each hook, and removes the Terraform hook block entirely if you said you have no IaC repo.",
     ],
     examples: [
       {
@@ -78,19 +79,8 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
         content:
           "git commit will now auto-run the hooks defined in .pre-commit-config.yaml. A failing hook\nblocks the commit — bypass with `git commit --no-verify` only in a genuine emergency.",
       },
-    ],
-  },
-
-  "pre-commit-config": {
-    why: [
-      "The pre-commit hooks ship with placeholder path globs (<service>, <lambdas-or-workers>) that match nothing on disk — they need your team's real directory names before they actually run against your code.",
-    ],
-    impact: [
-      "Writes .pre-commit-config.yaml — specifically the files: glob on each hook, and removes the Terraform hook block entirely if you said you have no IaC repo.",
-    ],
-    examples: [
       {
-        label: "Example",
+        label: "Example glob values",
         content:
           "Service directory: billing-service\n→ files: ^codebase/(billing-service/service|workers/.*)/",
       },
@@ -170,7 +160,7 @@ export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
         },
         {
           icon: "📌",
-          text: "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install, talisman -i), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
+          text: "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
         },
         {
           icon: "🌐",
@@ -188,7 +178,7 @@ export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
       body: [
         "File writes: reversible via the automatic .bak-<timestamp> backup, or `git checkout` if the file was already tracked.",
         "git rm (Recommended Resources cleanup): reversible via `git status` / `git checkout` as long as you haven't committed yet.",
-        "Cloning repos, installing pre-commit hooks, running talisman -i: safe to re-run — none of them are destructive to re-trigger.",
+        "Cloning repos, installing pre-commit hooks: safe to re-run — none of them are destructive to re-trigger.",
       ],
     },
     {

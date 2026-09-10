@@ -79,6 +79,10 @@ export type FieldSchema = {
   help?: string;
   placeholder?: string;
   columns?: TableColumn[]; // for type: "table"
+  /** Suggested values for a "text" field, offered as a native datalist dropdown — the field
+   * stays freeform (any value can still be typed), this just surfaces likely-correct picks,
+   * e.g. the repos already configured in "Configure & clone repos" for a directory-name field. */
+  options?: { value: string; label: string }[];
 };
 
 export type ManagedFileInfo = {

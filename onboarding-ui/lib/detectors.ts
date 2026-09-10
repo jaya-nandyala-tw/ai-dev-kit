@@ -103,6 +103,23 @@ function preCommitHooks(): StepStatusEntry {
   return { id: "pre-commit-hooks", status: installed ? "done" : "not-started" };
 }
 
+// Combines the two pre-commit sub-checks (hook installed, globs configured) into the single
+// status shown for the merged "pre-commit" step — the two RunStep/FileFormStep panes inside it
+// each still read their own sub-entry (see below) to decide what to render.
+function preCommit(hooks: StepStatusEntry, config: StepStatusEntry): StepStatusEntry {
+  if (hooks.status === "done" && config.status === "done") {
+    return { id: "pre-commit", status: "done" };
+  }
+  if (hooks.status === "done" || config.status === "done") {
+    return {
+      id: "pre-commit",
+      status: "partial",
+      detail: hooks.status === "done" ? "Hook installed — globs still need your directory names" : "Globs configured — hook not installed yet",
+    };
+  }
+  return { id: "pre-commit", status: "not-started" };
+}
+
 function codeowners(): StepStatusEntry {
   const current = read("CODEOWNERS");
   const hasRule = current
@@ -121,12 +138,6 @@ function sensorTable(): StepStatusEntry {
   const current = read(".github/instructions/global.instructions.md");
   const stillPlaceholder = current.includes("<service>/src/**/*.py");
   return { id: "sensor-table", status: !current || stillPlaceholder ? "not-started" : "done" };
-}
-
-function talisman(): StepStatusEntry {
-  const current = read(".talismanrc");
-  const untouched = !current || /fileignoreconfig:\s*\[\]/.test(current);
-  return { id: "talisman", status: untouched ? "not-started" : "done" };
 }
 
 function jira(state: OnboardingState): StepStatusEntry {
@@ -150,16 +161,18 @@ export function isAtlassianConfigured(): boolean {
 export function computeAllStatuses(): { state: OnboardingState; statuses: Record<string, StepStatusEntry> } {
   const state = readState();
   const reposStatus = reposConfig();
+  const preCommitHooksStatus = preCommitHooks();
+  const preCommitConfigStatus = preCommitConfig();
   const entries = [
     prerequisites(),
     stackProfile(state),
     reposStatus,
     cloneRepos(reposStatus),
-    preCommitHooks(),
+    preCommitHooksStatus,
     codeowners(),
-    preCommitConfig(),
+    preCommitConfigStatus,
+    preCommit(preCommitHooksStatus, preCommitConfigStatus),
     sensorTable(),
-    talisman(),
     jira(state),
   ];
   const statuses: Record<string, StepStatusEntry> = {};

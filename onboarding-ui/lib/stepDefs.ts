@@ -2,7 +2,7 @@
 // Status per step comes from GET /api/status (server-computed via lib/detectors.ts); this file
 // only describes what to show, in what order, and how steps relate to each other.
 
-export type StepKind = "prerequisites" | "questionnaire" | "repos" | "run" | "file-form";
+export type StepKind = "prerequisites" | "questionnaire" | "repos" | "run" | "file-form" | "pre-commit";
 
 export type StepDef = {
   id: string;
@@ -46,22 +46,14 @@ export const STEP_DEFS: StepDef[] = [
     icon: "📦",
   },
   {
-    id: "pre-commit-hooks",
+    id: "pre-commit",
     title: "Pre-commit hooks",
     shortTitle: "Pre-commit",
-    description: "Install pre-commit and its git hook — a safety net for every commit.",
-    kind: "run",
+    description:
+      "Install pre-commit's git hook — a safety net for every commit — then point it at your real directory names so it actually runs against your code.",
+    kind: "pre-commit",
     group: "required",
     icon: "🪝",
-  },
-  {
-    id: "pre-commit-config",
-    title: "Pre-commit config globs",
-    shortTitle: "Hook globs",
-    description: "Point the pre-commit hooks at your real directory names.",
-    kind: "file-form",
-    group: "required",
-    icon: "🎯",
   },
   {
     id: "sensor-table",
