@@ -59,7 +59,7 @@ export const STEP_DEFS: StepDef[] = [
     id: "sensor-table",
     title: "Sensor Dispatch Table",
     shortTitle: "Sensors",
-    description: "Map file patterns to the sensor commands agents should run after an edit.",
+    description: "Map file patterns to the sensor commands agents should run after an edit — add only the rows relevant to your stack.",
     kind: "file-form",
     group: "required",
     icon: "📡",

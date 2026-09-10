@@ -3,8 +3,7 @@ import path from "node:path";
 import { repoPath } from "./paths";
 import { buildDiff, hashContent } from "./diff";
 import * as T from "./templates";
-import { readState } from "./stateStore";
-import type { DiffResult, FieldSchema, ProfileAnswers } from "@/types";
+import type { DiffResult, FieldSchema } from "@/types";
 
 export type ManagedFileDef = {
   key: string;
@@ -39,7 +38,10 @@ function readConfiguredRepos(): ConfiguredRepo[] {
   if (!raw) return [];
   try {
     const doc = JSON.parse(raw) as { repos?: ConfiguredRepo[] };
-    return doc.repos ?? [];
+    // The shipped template ships with placeholder repo entries (e.g. "<service-name>") so
+    // scripts/clone-repos.sh --select has something to overwrite — never real repos, so never
+    // worth offering as a dropdown suggestion.
+    return (doc.repos ?? []).filter((r) => r.name && !/^<[^>]+>$/.test(r.name));
   } catch {
     return [];
   }
@@ -97,6 +99,21 @@ const codeowners: ManagedFileDef = {
 
 // ── .pre-commit-config.yaml ─────────────────────────────────────────────────
 
+/** Reads the directory names already chosen in the Pre-commit step (serviceDir, workersGlob,
+ * iacPrefix). Shared with the Sensor Dispatch Table below so a team only ever names its
+ * repos once — the sensor table auto-fills from whatever pre-commit already knows instead of
+ * asking again. */
+function readPreCommitDirValues(): { serviceDir: string; workersGlob: string; iacPrefix: string } {
+  const current = readIfExists(".pre-commit-config.yaml") ?? T.PRE_COMMIT_CONFIG_BASELINE;
+  const serviceDir = /files: \^codebase\/\(([^/]+)\/service\|/.exec(current)?.[1] ?? "";
+  const workersGlob = /\/service\|([^)]+)\)\//.exec(current)?.[1] ?? "";
+  const iacPrefix = /id: terraform_fmt\s*\n\s*files: \^codebase\/([^\n]+)/.exec(current)?.[1] ?? "";
+  // Still-unfilled placeholder tokens (angle-bracket names) aren't real directory names — treat
+  // them the same as "not set yet" rather than showing/reusing literal "<service>" text.
+  const clean = (v: string) => (/^<[^>]+>/.test(v) ? "" : v);
+  return { serviceDir: clean(serviceDir), workersGlob: clean(workersGlob), iacPrefix: clean(iacPrefix) };
+}
+
 const preCommitConfig: ManagedFileDef = {
   key: "pre-commit-config",
   label: "Pre-commit hook file globs",
@@ -147,13 +164,7 @@ const preCommitConfig: ManagedFileDef = {
     ];
   },
   baseline: () => T.PRE_COMMIT_CONFIG_BASELINE,
-  parseCurrentValues: () => {
-    const current = readIfExists(".pre-commit-config.yaml") ?? T.PRE_COMMIT_CONFIG_BASELINE;
-    const serviceDir = /files: \^codebase\/\(([^/]+)\/service\|/.exec(current)?.[1] ?? "";
-    const workersGlob = /\/service\|([^)]+)\)\//.exec(current)?.[1] ?? "";
-    const iacPrefix = /files: \^codebase\/([^\n]+)$/m.exec(current)?.[1] ?? "";
-    return { serviceDir, workersGlob, iacPrefix };
-  },
+  parseCurrentValues: () => readPreCommitDirValues(),
   buildProposed: (values) => {
     const serviceDir = String(values.serviceDir ?? "<service>").trim() || "<service>";
     const workersGlob = String(values.workersGlob ?? "<lambdas-or-workers>").trim() || "<lambdas-or-workers>";
@@ -207,30 +218,6 @@ function renderSensorTable(rows: SensorRow[]): string {
   return header + rows.map((r) => `| ${r.pattern} | ${r.command} | ${r.cwd} |`).join("\n") + "\n";
 }
 
-// Each shipped placeholder row is tagged with the profile flag (from the "Tell us about your
-// stack" step) that determines whether it's actually relevant. `null` means "no dependency —
-// every team needs this one" (the core python service + its tests).
-const SENSOR_ROW_RELEVANCE: Array<{ match: (pattern: string) => boolean; profileKey: keyof ProfileAnswers | null }> = [
-  { match: (p) => p.includes("ui/src"), profileKey: "buildsFrontend" },
-  { match: (p) => p.includes("<iac-module>") || p.includes("iac"), profileKey: "hasIac" },
-  { match: (p) => p.includes("<function>") || p.includes("<shared-layer>"), profileKey: "hasWorkers" },
-];
-
-/** Drops shipped placeholder rows that don't apply to this team's stack (e.g. no Terraform row
- * if they said they have no IaC repo) — mirrors the same "don't ship dead config" pattern
- * already used for the Terraform hook block in .pre-commit-config.yaml. Only ever touches rows
- * that are still exactly the shipped placeholders; a table the user has already started
- * customizing (real paths swapped in) is left untouched so nothing they typed gets silently
- * removed. */
-function filterPlaceholderRowsForProfile(rows: SensorRow[], profile: ProfileAnswers | null): SensorRow[] {
-  if (!profile) return rows;
-  return rows.filter((r) => {
-    const rule = SENSOR_ROW_RELEVANCE.find((rule) => rule.match(r.pattern));
-    if (!rule || !rule.profileKey) return true;
-    return profile[rule.profileKey];
-  });
-}
-
 const globalInstructions: ManagedFileDef = {
   key: "global-instructions",
   label: "Sensor Dispatch Table",
@@ -247,15 +234,41 @@ const globalInstructions: ManagedFileDef = {
       ],
     },
   ],
+  // Dropdown suggestions for pattern/cwd come from whatever repos are already configured, same
+  // pattern as pre-commit-config's getFields — these are just suggestions offered on an empty
+  // input, never pre-filled row values.
+  getFields: () => {
+    const repos = readConfiguredRepos();
+    const dirOptions = repos.map((r) => ({
+      value: r.tier === "worker" ? `codebase/workers/${r.name}` : `codebase/${r.name}`,
+      label: `${r.name} (${r.tier})`,
+    }));
+    const pickHelp = dirOptions.length > 0 ? "Pattern/cwd columns suggest your configured repo directories — pick one or type your own." : undefined;
+    return [
+      {
+        name: "rows",
+        label: "File pattern → sensor command → cwd",
+        type: "table",
+        help: pickHelp,
+        columns: [
+          { name: "pattern", label: "File pattern", placeholder: "codebase/billing-service/src/**/*.py", options: dirOptions },
+          { name: "command", label: "Sensor command", placeholder: "ruff check {file} && pytest -xvs tests/", suggestable: true },
+          { name: "cwd", label: "Cwd", placeholder: "codebase/billing-service/", options: dirOptions },
+        ],
+      },
+    ];
+  },
   baseline: () => T.GLOBAL_INSTRUCTIONS_BASELINE,
   parseCurrentValues: () => {
     const current = readIfExists(".github/instructions/global.instructions.md");
-    const rows = parseSensorTable(current ?? T.GLOBAL_INSTRUCTIONS_BASELINE);
-    // Only pre-trim rows the first time this step is opened (file not written yet) — once
-    // written, whatever rows are on disk are the source of truth as-is.
-    const stillDefault = !current;
-    const relevantRows = stillDefault ? filterPlaceholderRowsForProfile(rows, readState().profile) : rows;
-    return { rows: relevantRows };
+    // Same "still exactly the shipped placeholder" check detectors.ts uses for this file's
+    // status badge — while true, the form starts with an empty table (no pre-filled default
+    // rows/values); the placeholder text on each column and the guidance note above the table
+    // (sensorGuidanceNote) are the only examples shown. Once the user has written their own
+    // rows, those are the source of truth as-is.
+    const stillDefault = !current || current.includes("<service>/src/**/*.py");
+    if (stillDefault) return { rows: [] };
+    return { rows: parseSensorTable(current!) };
   },
   buildProposed: (values) => {
     const rows = (values.rows as SensorRow[] | undefined) ?? [];

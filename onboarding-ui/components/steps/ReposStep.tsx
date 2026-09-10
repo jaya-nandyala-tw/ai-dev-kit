@@ -44,13 +44,26 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [written, setWritten] = useState(false);
   const [scope, setScope] = useState<"--all" | "--core-only">("--core-only");
+  const [cloneRan, setCloneRan] = useState(false);
+  const [hookSelection, setHookSelection] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchFileSchema("repos-json").then((res) => {
-      const current = res.currentValues as { github?: { org?: string } };
+      const current = res.currentValues as { github?: { org?: string }; repos?: Array<{ name: string; tier: "core" | "worker" }> };
       const org = current?.github?.org;
       if (org && org !== "<your-github-org>") {
-        setPersistedState((prev) => ({ ...prev, org }));
+        setPersistedState((prev) => ({
+          ...prev,
+          org,
+          // Rebuild the summary from what's already on disk if localStorage came back empty
+          // (e.g. first load on a new machine/browser after config/repos.json was written by
+          // someone else, or local storage was cleared) — otherwise the "Selected repos"
+          // section would stay hidden even though the file is already fully configured.
+          rows:
+            prev.rows.length === 0 && current.repos?.length
+              ? current.repos.map((r) => ({ name: r.name, visibility: "unknown", selected: true, tier: r.tier }))
+              : prev.rows,
+        }));
         setWritten(true);
       }
     });
@@ -91,6 +104,35 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
   }
 
   const selectedCount = persistedState.rows.filter((r) => r.selected).length;
+  const selectedCore = persistedState.rows.filter((r) => r.selected && r.tier === "core");
+  const selectedReference = persistedState.rows.filter((r) => r.selected && r.tier === "worker");
+  const selectedRepos = [...selectedCore, ...selectedReference];
+
+  // Mirrors clone-repos.sh's own layout: core repos land directly under codebase/, workers
+  // (labeled "reference" in this UI) under codebase/workers/.
+  function repoDir(r: Row): string {
+    return r.tier === "worker" ? `codebase/workers/${r.name}` : `codebase/${r.name}`;
+  }
+
+  // Default every selected repo to checked whenever the selection itself changes (new repo
+  // picked, one deselected) — a repo that drops out of `selectedRepos` also drops out of
+  // hookSelection on the next render since only known names are read from it below.
+  useEffect(() => {
+    setHookSelection((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const r of selectedRepos) {
+        if (!(r.name in next)) {
+          next[r.name] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRepos.map((r) => r.name).join(",")]);
+
+  const hookTargets = selectedRepos.filter((r) => hookSelection[r.name] !== false).map(repoDir);
 
   function buildValues() {
     const selected = persistedState.rows.filter((r) => r.selected);
@@ -218,6 +260,54 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
         onCancel={() => setConfirmOpen(false)}
       />
 
+      {/* Summary — sourced from persistedState (localStorage, via useStepState), not from the
+          written file. Shown as soon as anything is checked and stays up whether or not
+          config/repos.json has been written yet, so the picks are never "lost" while a
+          preview/write/clone is in flight or after navigating away and back. */}
+      {selectedCount > 0 && (
+        <div className="panel-flat p-4 anim-fade-in-up">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold">✓ Selected repos</span>
+            <span className="mono text-xs" style={{ color: "var(--accent)" }}>
+              {selectedCount} total · saved locally
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <span className="label-micro block mb-1.5">core ({selectedCore.length})</span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedCore.length === 0 && <span className="text-xs opacity-60">None selected</span>}
+                {selectedCore.map((r) => (
+                  <span
+                    key={r.name}
+                    className="mono text-xs px-2 py-1 border"
+                    style={{ borderColor: "var(--accent)", background: "var(--accent-soft)" }}
+                  >
+                    {r.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="label-micro block mb-1.5">reference ({selectedReference.length})</span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedReference.length === 0 && <span className="text-xs opacity-60">None selected</span>}
+                {selectedReference.map((r) => (
+                  <span key={r.name} className="mono text-xs px-2 py-1 border" style={{ borderColor: "var(--border)" }}>
+                    {r.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--muted-soft)] mt-3">
+            {written
+              ? "Kept here — and in your browser's local storage — even after config/repos.json is written, so your picks aren't lost while repos clone in the background or if you navigate elsewhere."
+              : "Saved to your browser's local storage as you check boxes, before config/repos.json is even written — safe to preview/write whenever you're ready."}
+          </p>
+        </div>
+      )}
+
       {written && (
         <div className="panel-flat p-4 space-y-3 anim-fade-in-up">
           <PhaseLabel n="03" title="Clone repos" />
@@ -236,8 +326,60 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
             label="Clone repos"
             successMessage="Repos cloned"
             confirmBody={`Runs scripts/clone-repos.sh ${scope} — clones every configured repo into codebase/ via git.`}
-            onDone={onWritten}
+            onDone={() => {
+              setCloneRan(true);
+              onWritten();
+            }}
           />
+        </div>
+      )}
+
+      {/* Phase 04 — propagate the hook into each cloned repo. Each core/worker repo is its own
+          git repository, so the "Pre-commit hooks" step's install only ever wired up this
+          harness repo's own .git/hooks/pre-commit — commits made inside codebase/<repo> still
+          need `pre-commit install` run there too, against that repo's own
+          .pre-commit-config.yaml (if it has one). Gated on cloneRan so it only appears once
+          there's actually something on disk to point pre-commit at. */}
+      {written && cloneRan && selectedRepos.length > 0 && (
+        <div className="panel-flat p-4 space-y-3 anim-fade-in-up">
+          <PhaseLabel n="04" title="Apply pre-commit hooks to cloned repos" />
+          <p className="text-sm text-[var(--muted)]">
+            Why: the pre-commit hook installed earlier only covers commits made at this harness's own root — each
+            cloned repo below is a separate git repo and needs the hook installed inside it too before its own
+            commits get checked.
+          </p>
+          <p className="text-sm text-[var(--muted)]">
+            How: pick which cloned repos to wire up (all selected repos are checked by default), then run. Repos
+            that aren&apos;t cloned yet, or don&apos;t have their own .pre-commit-config.yaml, are skipped
+            automatically — the log below says which and why.
+          </p>
+          <div className="space-y-1.5">
+            {selectedRepos.map((r) => (
+              <label key={r.name} className="panel-flat p-2.5 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={hookSelection[r.name] !== false}
+                  onChange={(e) => setHookSelection((prev) => ({ ...prev, [r.name]: e.target.checked }))}
+                />
+                <span className="mono flex-1">{repoDir(r)}</span>
+                <span className="label-micro">{r.tier === "worker" ? "reference" : "core"}</span>
+              </label>
+            ))}
+          </div>
+          <RunStep
+            key={hookTargets.join(",")}
+            scriptKey="apply-pre-commit-hooks"
+            args={hookTargets}
+            stepId="apply-pre-commit-hooks"
+            label={`Apply hooks to ${hookTargets.length} repo${hookTargets.length === 1 ? "" : "s"}`}
+            successMessage="Pre-commit hooks applied"
+            confirmBody={`Runs scripts/apply-pre-commit-hooks.sh against: ${hookTargets.join(", ") || "(none selected)"}`}
+            onDone={onWritten}
+            disabled={hookTargets.length === 0}
+          />
+          {hookTargets.length === 0 && (
+            <p className="text-sm text-[var(--muted-soft)]">Check at least one repo above to enable this.</p>
+          )}
         </div>
       )}
     </div>

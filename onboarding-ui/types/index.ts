@@ -70,6 +70,9 @@ export type TableColumn = {
   placeholder?: string;
   /** Column can be filled via a Copilot CLI suggestion (see GenericFileForm's "✨" affordance). */
   suggestable?: boolean;
+  /** Same idea as FieldSchema.options — a native datalist of likely-correct picks (e.g. repos
+   * configured in "Configure & clone repos"), while the cell stays a freeform text input. */
+  options?: { value: string; label: string }[];
 };
 
 export type FieldSchema = {

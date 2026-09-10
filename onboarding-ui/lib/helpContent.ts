@@ -54,6 +54,7 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
     impact: [
       "Writes config/repos.json.",
       "Once written, running \"Clone repos\" does real `git clone` operations into codebase/ — an actual network call to GitHub, not a simulation.",
+      "Once repos are cloned, \"Apply pre-commit hooks to cloned repos\" runs `pre-commit install` inside each one you pick — the earlier Pre-commit hooks step only wires up this harness's own root repo, not the ones cloned here.",
     ],
     examples: [
       {
@@ -90,6 +91,7 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
   "sensor-table": {
     why: [
       "This table tells AI agents exactly which command to run after editing a matching file — without it, agents either skip verification entirely or guess at a command that may not exist.",
+      "The table starts empty — no default rows or example values are pre-filled. Based on your Profile answers, add a row for each pattern you actually need (every team needs the core service row; frontend/IaC/worker rows only if you said yes to those). Pattern/Cwd inputs offer your configured repo directories as suggestions to pick from, and every column shows an example as greyed-out placeholder text.",
     ],
     impact: [
       "Regenerates only the anchored block inside .github/instructions/global.instructions.md (between the sensor-dispatch-table:start/end comments) — the rest of that file's prose and rules are left exactly as they are.",
@@ -99,6 +101,11 @@ export const STEP_HELP: Record<string, StepHelpContent> = {
         label: "Example row",
         content:
           "Pattern:  codebase/billing-service/src/**/*.py\nCommand:  ruff check {file} && pytest -xvs tests/\nCwd:      codebase/billing-service/\n\n→ @implement runs that exact command after touching a matching file.",
+      },
+      {
+        label: "How to fill rows",
+        content:
+          "Add one row per service/repo pattern (e.g. core service src+tests, frontend ui/src, IaC *.tf, each worker/lambda). Pattern/Cwd offer your configured repo directories as suggestions — pick one or type a custom glob. Use the ✨ button on Command to have Copilot CLI draft a sensible check command from the other columns.",
       },
     ],
   },
@@ -160,7 +167,7 @@ export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
         },
         {
           icon: "📌",
-          text: "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
+          text: "Only known, fixed scripts run — the same ones already shipped in this repo's scripts/ folder (clone-repos.sh, pre-commit install, apply-pre-commit-hooks.sh), plus git rm for the Recommended Resources cleanup. Nothing is built from free text, so there's no command-injection surface.",
         },
         {
           icon: "🌐",
@@ -178,7 +185,7 @@ export const GLOBAL_HELP: { sections: GlobalHelpSection[] } = {
       body: [
         "File writes: reversible via the automatic .bak-<timestamp> backup, or `git checkout` if the file was already tracked.",
         "git rm (Recommended Resources cleanup): reversible via `git status` / `git checkout` as long as you haven't committed yet.",
-        "Cloning repos, installing pre-commit hooks: safe to re-run — none of them are destructive to re-trigger.",
+        "Cloning repos, installing pre-commit hooks, applying pre-commit hooks to cloned repos: safe to re-run — none of them are destructive to re-trigger.",
       ],
     },
     {

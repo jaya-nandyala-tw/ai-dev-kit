@@ -134,7 +134,8 @@ function TableField({
 
   return (
     <div>
-      <label className="block text-sm mb-2 font-semibold">{field.label}</label>
+      <label className="block text-sm mb-1.5 font-semibold">{field.label}</label>
+      {field.help && <p className="text-xs text-[var(--muted-soft)] mb-2">{field.help}</p>}
 
       {rows.length === 0 && (
         <div className="panel-flat border-dashed p-4 text-center text-sm text-[var(--muted-soft)] mb-2">
@@ -159,7 +160,17 @@ function TableField({
                         placeholder={c.placeholder ?? c.label}
                         value={row[c.name] ?? ""}
                         onChange={(e) => updateCell(i, c.name, e.target.value)}
+                        {...(c.options?.length ? { list: `${field.name}-${c.name}-options` } : {})}
                       />
+                      {c.options && c.options.length > 0 && (
+                        <datalist id={`${field.name}-${c.name}-options`}>
+                          {c.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </datalist>
+                      )}
                       {c.suggestable && (
                         <button
                           type="button"

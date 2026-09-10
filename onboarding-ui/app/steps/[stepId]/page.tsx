@@ -16,6 +16,7 @@ import { ReposStep } from "@/components/steps/ReposStep";
 import { FileFormStep } from "@/components/steps/FileFormStep";
 import { PreCommitStep } from "@/components/steps/PreCommitStep";
 import { JiraStep } from "@/components/steps/JiraStep";
+import { sensorGuidanceNote } from "@/lib/sensorGuidance";
 
 const FILE_FORM_KEY_BY_STEP: Record<string, string> = {
   "sensor-table": "global-instructions",
@@ -114,7 +115,12 @@ export default function StepPage() {
               )}
 
               {def.kind === "file-form" && stepId !== "jira" && FILE_FORM_KEY_BY_STEP[stepId] && (
-                <FileFormStep fileKey={FILE_FORM_KEY_BY_STEP[stepId]} stepId={stepId} onWritten={refresh} />
+                <FileFormStep
+                  fileKey={FILE_FORM_KEY_BY_STEP[stepId]}
+                  stepId={stepId}
+                  onWritten={refresh}
+                  extraFieldsNote={stepId === "sensor-table" ? sensorGuidanceNote(profile) : undefined}
+                />
               )}
 
               {stepId === "jira" && <JiraStep onDone={refresh} />}

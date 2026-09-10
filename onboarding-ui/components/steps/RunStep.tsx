@@ -16,6 +16,7 @@ export function RunStep({
   danger,
   successMessage,
   onDone,
+  disabled,
 }: {
   scriptKey: string;
   args?: string[];
@@ -25,6 +26,10 @@ export function RunStep({
   danger?: boolean;
   successMessage?: string;
   onDone: () => void;
+  /** Hides the confirm dialog's trigger behind a disabled button — for actions whose args
+   * depend on some other selection (e.g. "at least one repo checked") rather than being ready
+   * to fire the moment this component mounts. */
+  disabled?: boolean;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
@@ -48,7 +53,7 @@ export function RunStep({
   return (
     <div className="space-y-3">
       {!runId && (
-        <Button variant={danger ? "danger" : "primary"} onClick={() => setConfirmOpen(true)}>
+        <Button variant={danger ? "danger" : "primary"} onClick={() => setConfirmOpen(true)} disabled={disabled}>
           {label}
         </Button>
       )}

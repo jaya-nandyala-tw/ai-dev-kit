@@ -35,6 +35,12 @@ const SCRIPTS: Record<string, ScriptDef> = {
     baseArgs: ["-c", "pip3 install pre-commit && pre-commit install"],
     cwd: REPO_ROOT,
   },
+  "apply-pre-commit-hooks": {
+    label: "Apply pre-commit hooks to cloned repos",
+    command: "bash",
+    baseArgs: [`${REPO_ROOT}/scripts/apply-pre-commit-hooks.sh`],
+    cwd: REPO_ROOT,
+  },
   "git-rm": {
     label: "Remove files not needed for your stack",
     command: "git",
