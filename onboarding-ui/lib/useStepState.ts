@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const STEP_STATE_KEY = "onboarding-step-state";
 
@@ -32,7 +32,7 @@ export function useStepState<T>(stepId: string, defaultValue: T): [T, (value: T 
     localStorage.setItem(STEP_STATE_KEY, JSON.stringify(stateMap));
   }, [state, stepId, loaded]);
 
-  const setStateWrapper = (value: T | ((prev: T) => T)) => {
+  const setStateWrapper = useCallback((value: T | ((prev: T) => T)) => {
     if (typeof value === "function") {
       setState((prev) => {
         const next = (value as (prev: T) => T)(prev);
@@ -41,7 +41,7 @@ export function useStepState<T>(stepId: string, defaultValue: T): [T, (value: T 
     } else {
       setState(value);
     }
-  };
+  }, []);
 
   return [state, setStateWrapper];
 }
