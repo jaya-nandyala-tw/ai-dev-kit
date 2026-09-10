@@ -4,6 +4,12 @@ export type ProfileAnswers = {
   hasWorkers: boolean;
   hasIac: boolean;
   usesJira: boolean;
+  buildsFrontend: boolean;
+  buildsAiSolutions: boolean;
+  buildsDataPipelines: boolean;
+  usesDocker: boolean;
+  usesKubernetes: boolean;
+  usesDatabases: boolean;
 };
 
 export type ProfileQuestionKey = keyof ProfileAnswers;

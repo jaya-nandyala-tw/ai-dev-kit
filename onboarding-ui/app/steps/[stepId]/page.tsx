@@ -82,8 +82,6 @@ export default function StepPage() {
 
             {/* Header — progress rail + step info card. Never scrolls. */}
             <div className="shrink-0">
-              <ProgressRail currentStepId={stepId} profile={profile} statuses={statuses} />
-
               <div className="panel-flat p-5">
                 <div className="flex items-center justify-between mb-1">
                   <p className="label-micro">

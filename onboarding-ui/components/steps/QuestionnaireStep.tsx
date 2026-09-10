@@ -4,17 +4,43 @@ import { useState } from "react";
 import { saveProfile } from "@/lib/apiClient";
 import type { ProfileAnswers } from "@/types";
 
-const QUESTIONS: Array<{ key: keyof ProfileAnswers; icon: string; label: string; help?: string }> = [
-  { key: "hasWorkers", icon: "λ", label: "Do you build/maintain Lambda or worker functions?" },
-  { key: "hasIac", icon: "🏗️", label: "Do you manage infrastructure as code (Terraform/CDK) in a dedicated repo?" },
-  { key: "usesJira", icon: "🎫", label: "Do you track tickets in Jira Cloud?" },
+const QUESTIONS: Array<{ key: keyof ProfileAnswers; icon: string; label: string; help?: string; category: string }> = [
+  // Application Type
+  { key: "buildsFrontend", icon: "🎨", label: "Do you build/maintain frontend applications?", category: "Application Type", help: "React, Vue, Next.js, etc." },
+  { key: "buildsAiSolutions", icon: "🤖", label: "Do you build/maintain AI/ML solutions?", category: "Application Type", help: "LLMs, embeddings, RAG, agents, etc." },
+  { key: "buildsDataPipelines", icon: "📊", label: "Do you build/maintain data pipelines?", category: "Application Type", help: "ETL, data transformation, analytics, etc." },
+  
+  // Infrastructure & DevOps
+  { key: "hasWorkers", icon: "λ", label: "Do you build/maintain Lambda or worker functions?", category: "Infrastructure & DevOps" },
+  { key: "hasIac", icon: "🏗️", label: "Do you manage infrastructure as code (Terraform/CDK)?", category: "Infrastructure & DevOps", help: "In a dedicated repo" },
+  { key: "usesDocker", icon: "🐳", label: "Do you use Docker for containerization?", category: "Infrastructure & DevOps" },
+  { key: "usesKubernetes", icon: "⚙️", label: "Do you deploy to Kubernetes?", category: "Infrastructure & DevOps", help: "EKS, GKE, self-hosted, etc." },
+  
+  // Data & Integration
+  { key: "usesDatabases", icon: "🗄️", label: "Do you manage databases (SQL, NoSQL)?", category: "Data & Integration", help: "PostgreSQL, MongoDB, DynamoDB, etc." },
+  
+  // Process & Tools
+  { key: "usesJira", icon: "🎫", label: "Do you track tickets in Jira Cloud?", category: "Process & Tools" },
 ];
 
 const EMPTY_ANSWERS: ProfileAnswers = {
   hasWorkers: false,
   hasIac: false,
   usesJira: false,
+  buildsFrontend: false,
+  buildsAiSolutions: false,
+  buildsDataPipelines: false,
+  usesDocker: false,
+  usesKubernetes: false,
+  usesDatabases: false,
 };
+
+// Group questions by category
+const GROUPED_QUESTIONS = QUESTIONS.reduce((acc, q) => {
+  if (!acc[q.category]) acc[q.category] = [];
+  acc[q.category]!.push(q);
+  return acc;
+}, {} as Record<string, typeof QUESTIONS>);
 
 export function QuestionnaireStep({
   initial,
@@ -38,46 +64,51 @@ export function QuestionnaireStep({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-3">
-        {QUESTIONS.map((q) => {
-          const checked = answers[q.key];
-          return (
-            <button
-              key={q.key}
-              type="button"
-              onClick={() => toggle(q.key)}
-              className="text-left panel-flat card-interactive p-4 flex flex-col gap-2.5 anim-fade-in-up"
-              style={checked ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : undefined}
-            >
-              <span className="flex items-start justify-between">
-                <span
-                  className="w-9 h-9 border flex items-center justify-center shrink-0 text-base"
-                  style={{ background: checked ? "var(--accent-soft)" : "var(--bg-elevated)", borderColor: "var(--border-soft)" }}
+    <div className="space-y-6">
+      {Object.entries(GROUPED_QUESTIONS).map(([category, questions]) => (
+        <div key={category} className="space-y-2">
+          <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">{category}</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {questions.map((q) => {
+              const checked = answers[q.key];
+              return (
+                <button
+                  key={q.key}
+                  type="button"
+                  onClick={() => toggle(q.key)}
+                  className="text-left panel-flat card-interactive p-4 flex flex-col gap-2.5 anim-fade-in-up"
+                  style={checked ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : undefined}
                 >
-                  {q.icon}
-                </span>
-                <span
-                  className="w-5 h-5 border flex items-center justify-center shrink-0 transition-all"
-                  style={{
-                    borderColor: checked ? "var(--accent)" : "var(--border)",
-                    background: checked ? "var(--accent)" : "transparent",
-                    color: "var(--bg)",
-                  }}
-                >
-                  {savingKey === q.key ? (
-                    <span className="spinner" style={{ width: "0.65em", height: "0.65em" }} />
-                  ) : (
-                    checked && <span className="text-xs anim-pop">✓</span>
-                  )}
-                </span>
-              </span>
-              <span className="text-sm font-medium">{q.label}</span>
-              {q.help && <span className="text-xs text-[var(--muted-soft)]">{q.help}</span>}
-            </button>
-          );
-        })}
-      </div>
+                  <span className="flex items-start justify-between">
+                    <span
+                      className="w-9 h-9 border flex items-center justify-center shrink-0 text-base"
+                      style={{ background: checked ? "var(--accent-soft)" : "var(--bg-elevated)", borderColor: "var(--border-soft)" }}
+                    >
+                      {q.icon}
+                    </span>
+                    <span
+                      className="w-5 h-5 border flex items-center justify-center shrink-0 transition-all"
+                      style={{
+                        borderColor: checked ? "var(--accent)" : "var(--border)",
+                        background: checked ? "var(--accent)" : "transparent",
+                        color: "var(--bg)",
+                      }}
+                    >
+                      {savingKey === q.key ? (
+                        <span className="spinner" style={{ width: "0.65em", height: "0.65em" }} />
+                      ) : (
+                        checked && <span className="text-xs anim-pop">✓</span>
+                      )}
+                    </span>
+                  </span>
+                  <span className="text-sm font-medium">{q.label}</span>
+                  {q.help && <span className="text-xs text-[var(--muted-soft)]">{q.help}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
       <p className="mono text-xs text-[var(--muted-soft)]">Saved automatically — use Continue below when you're ready.</p>
     </div>
   );

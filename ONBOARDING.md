@@ -32,14 +32,147 @@ This repo is a **Context Engineering framework** that supercharges AI-assisted d
 | Requirement | How to get it |
 |---|---|
 | An editor with an AI coding agent (VS Code + Copilot, Claude Code, etc.) | Fill in your team's tool of choice |
-| Git + SSH key for GitHub | `ssh-keygen` → add to GitHub Settings → SSH Keys |
+| Git + SSH key for GitHub | See [Setup GitHub SSH Access](#setup-github-ssh-access) |
 | Container runtime (Docker Desktop / Colima / Podman) | See [System Dependencies → Container Runtime](#container-runtime) |
 | Node.js / Python / whatever your stack needs | Fill in your own versions |
-| GitHub CLI (`gh`) — optional, only for `./scripts/clone-repos.sh --select` | `brew install gh` then `gh auth login` |
+| GitHub CLI (`gh`) | See [Setup GitHub CLI](#setup-github-cli) |
+| Atlassian API credentials (Jira + Confluence) | See [Setup Atlassian API Key](#setup-atlassian-api-key) |
 
 > This kit deliberately doesn't cover your team's local dev experience (cloud auth, environment
 > profiles, IDE workspace setup) — bring your own tooling for that. It's scoped to the AI harness:
 > agents, skills, guardrails, and the story lifecycle below.
+
+---
+
+### Setup GitHub SSH Access
+
+GitHub SSH keys allow you to authenticate without entering a password each time.
+
+**1. Generate an SSH key (if you don't have one):**
+
+```bash
+ssh-keygen -t ed25519 -C "you@<your-company>.com"
+```
+
+Press Enter to accept defaults for file location and passphrase.
+
+**2. Add the SSH key to your GitHub account:**
+
+- Copy your public key: `cat ~/.ssh/id_ed25519.pub`
+- Go to [GitHub Settings → SSH Keys](https://github.com/settings/keys)
+- Click "New SSH key"
+- Paste your public key and give it a name (e.g. "MacBook Work")
+- Save
+
+**3. Test the connection:**
+
+```bash
+ssh -T git@github.com
+# Should output: Hi <your-username>! You've successfully authenticated...
+```
+
+---
+
+### Setup GitHub CLI
+
+The GitHub CLI (`gh`) enables automation like multi-repo cloning and branch creation. Required for `./scripts/clone-repos.sh --select`.
+
+**1. Install GitHub CLI:**
+
+```bash
+brew install gh
+```
+
+**2. Authenticate with GitHub:**
+
+```bash
+gh auth login
+```
+
+When prompted:
+- **What is your preferred protocol?** → Select `SSH`
+- **Upload your SSH public key to GitHub?** → `y` (or `n` if already done)
+- **Paste your authentication token?** → Choose "Login with a web browser" for interactive flow
+
+**3. Verify authentication:**
+
+```bash
+gh auth status
+```
+
+Should display: `✓ Logged in to github.com as <your-username>`
+
+**4. Optional — Grant additional scopes:**
+
+If you need to manage private repos or organizations:
+
+```bash
+gh auth refresh -s repo,admin:org_hook
+```
+
+**Troubleshooting:**
+- **"Not logged in"** → run `gh auth login` again
+- **SSH key issues** → ensure `~/.ssh/id_ed25519` exists and `gh auth status` shows SSH as protocol
+- **Permission denied** → run `gh auth refresh` to re-authenticate
+
+---
+
+### Setup Atlassian API Key
+
+The Atlassian API token enables access to Jira and Confluence for ticket intake and story context. **Required if your team uses Jira/Confluence; optional otherwise.**
+
+**1. Generate an Atlassian API token:**
+
+- Go to [Atlassian Account Settings → Security → API tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+- Click "Create API token"
+- Give it a label (e.g. "AI Harness — Local Dev")
+- Copy the token (save it securely — you won't see it again)
+
+**2. Add credentials to `.env`:**
+
+Create or edit `.env` in the workspace root:
+
+```bash
+# Atlassian API credentials
+JIRA_BASE_URL=https://<your-org>.atlassian.net
+JIRA_API_TOKEN=<paste-your-token-here>
+CONFLUENCE_BASE_URL=https://<your-org>.atlassian.net/wiki
+DEV_EMAIL=you@<your-company>.com
+```
+
+Replace:
+- `<your-org>` with your Atlassian Cloud organization name
+- `<paste-your-token-here>` with the API token from step 1
+- `you@<your-company>.com` with your email
+
+**3. Verify the connection:**
+
+```bash
+python -c "from atlassian_client import config; config.validate(); print('✓ Atlassian credentials valid')"
+```
+
+If validation passes, you're ready to use Jira/Confluence integration.
+
+**4. Try the Atlassian CLI agent (optional):**
+
+```bash
+python -m atlassian_client.agent
+```
+
+Example commands:
+```
+jira> active sprint for board 123
+jira> sprint report
+jira> blockers
+jira> help
+jira> exit
+```
+
+**Troubleshooting:**
+- **"401 Unauthorized"** → Check that `JIRA_API_TOKEN` and `DEV_EMAIL` are correct
+- **"403 Forbidden"** → Verify your Atlassian account has Jira/Confluence access
+- **"404 Not Found"** → Check that `JIRA_BASE_URL` matches your org's actual Atlassian domain
+- **Environment not loading** → Restart your shell or editor: `source ~/.zshrc` (zsh) or `source ~/.bashrc` (bash)
 
 ---
 

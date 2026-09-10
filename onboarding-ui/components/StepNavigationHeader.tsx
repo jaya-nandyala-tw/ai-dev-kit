@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { getVisibleSteps } from "@/lib/stepDefs";
-import { StatusBadge } from "@/components/StatusBadge";
 import type { StepStatus, StepStatusEntry } from "@/types";
+
+const STATUS_COLORS: Record<StepStatus, string> = {
+  done: "var(--ok)",
+  partial: "var(--warn)",
+  "not-started": "var(--muted)",
+  locked: "var(--muted)",
+};
 
 export function StepNavigationHeader({
   currentStepId,
@@ -27,7 +33,7 @@ export function StepNavigationHeader({
             const status = statuses[step.id]?.status ?? ("not-started" as StepStatus);
             const isActive = step.id === currentStepId;
             const isLocked = status === "locked";
-            const isDone = status === "done";
+            const statusColor = STATUS_COLORS[status];
 
             return (
               <Link
@@ -41,26 +47,23 @@ export function StepNavigationHeader({
                 } ${isLocked ? "opacity-50 pointer-events-none cursor-not-allowed" : "cursor-pointer"}`}
                 style={{
                   color: isActive ? "var(--text)" : "var(--muted)",
+                  boxShadow: `inset 0 -3px 0 ${statusColor}`,
                 }}
               >
                 {/* Step icon and title */}
-                <span className="text-lg leading-none flex-shrink-0">{step.icon}</span>
+                <span className="text-sm leading-none flex-shrink-0">{step.icon}</span>
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="mono text-xs text-[var(--muted-soft)]">
+                  <div className="flex gap-2">
+                    <span className="mono text-sm text-[var(--muted-soft)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <span className="text-sm font-semibold truncate">{step.shortTitle}</span>
-                  </div>
-                  {/* Status indicator */}
-                  <div className="flex-shrink-0 ml-1">
-                    <StatusBadge status={status} />
                   </div>
                 </div>
 
                 {/* Separator dots between steps */}
                 {index < visible.length - 1 && (
-                  <span className="flex-shrink-0 mx-1 text-[var(--border)]">·</span>
+                  <span className="flex-shrink-0 mx-1 text-[var(--border)]">→</span>
                 )}
               </Link>
             );

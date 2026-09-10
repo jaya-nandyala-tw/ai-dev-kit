@@ -57,7 +57,17 @@ const RULES: Rule[] = [
 ];
 
 export function computeRecommendations(profile: ProfileAnswers | null): RecommendationItem[] {
-  const p = profile ?? { hasWorkers: true, hasIac: true, usesJira: true };
+  const p = profile ?? { 
+    hasWorkers: true, 
+    hasIac: true, 
+    usesJira: true,
+    buildsFrontend: true,
+    buildsAiSolutions: true,
+    buildsDataPipelines: true,
+    usesDocker: true,
+    usesKubernetes: false,
+    usesDatabases: true,
+  };
   const profileKnown = profile !== null;
 
   return RULES.map((rule) => {
