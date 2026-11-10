@@ -31,7 +31,12 @@ function readIfExists(relPath: string): string | null {
 // Used to offer real directory names as dropdown suggestions instead of empty text inputs
 // (e.g. pre-commit-config's serviceDir/workersGlob/iacPrefix fields below).
 
-type ConfiguredRepo = { name: string; tier: "core" | "worker" };
+type ConfiguredRepo = {
+  name: string;
+  tier: "core" | "worker";
+  ui?: string | null;
+  service?: string | null;
+};
 
 function readConfiguredRepos(): ConfiguredRepo[] {
   const raw = readIfExists("config/repos.json");
@@ -291,7 +296,9 @@ const globalInstructions: ManagedFileDef = {
 
 type ReposDoc = {
   github: { org: string; protocol: "ssh" | "https" };
-  repos: Array<{ name: string; tier: "core" | "worker" }>;
+  repos: ConfiguredRepo[];
+  ui?: string | null;
+  service?: string | null;
 };
 
 const reposJson: ManagedFileDef = {
@@ -310,7 +317,57 @@ const reposJson: ManagedFileDef = {
   },
   buildProposed: (values) => {
     const doc = values as unknown as ReposDoc;
-    return { "config/repos.json": JSON.stringify({ github: doc.github, repos: doc.repos }, null, 2) + "\n" };
+    const current = reposJson.parseCurrentValues() as Partial<ReposDoc>;
+    const currentByName = new Map((current.repos ?? []).map((repo) => [repo.name, repo]));
+    const legacyLayerPath = (role: "ui" | "service", repo: ConfiguredRepo) => {
+      const legacyPath = current[role];
+      if (typeof legacyPath !== "string") return null;
+      const repoRelativePath =
+        repo.tier === "worker" ? `codebase/workers/${repo.name}` : `codebase/${repo.name}`;
+      return path.resolve(repoPath("."), legacyPath) === repoPath(repoRelativePath) ? "." : null;
+    };
+    for (const repo of doc.repos) {
+      for (const role of ["ui", "service"] as const) {
+        const layerPath = repo[role];
+        if (
+          layerPath != null &&
+          (!layerPath.trim() ||
+            layerPath !== layerPath.trim() ||
+            layerPath.startsWith("/") ||
+            layerPath.startsWith("~") ||
+            layerPath.includes("\\") ||
+            /[\u0000-\u001f\u007f]/.test(layerPath) ||
+            layerPath.split("/").includes(".."))
+        ) {
+          throw new Error(
+            `${repo.name} ${role} layer path must be a repository-relative path without '..' segments.`,
+          );
+        }
+      }
+    }
+    return {
+      "config/repos.json": JSON.stringify({
+        github: doc.github,
+        repos: doc.repos.map((repo) => {
+          const existing = currentByName.get(repo.name);
+          return {
+            ...repo,
+              ui:
+                repo.ui === undefined
+                  ? existing?.ui !== undefined
+                    ? existing.ui
+                    : legacyLayerPath("ui", repo)
+                  : repo.ui,
+              service:
+                repo.service === undefined
+                  ? existing?.service !== undefined
+                    ? existing.service
+                    : legacyLayerPath("service", repo)
+                  : repo.service,
+          };
+        }),
+      }, null, 2) + "\n",
+    };
   },
 };
 

@@ -33,6 +33,16 @@ history, the whole spec tree, or unrelated repo context. This is the entire poin
 `@implement` out of `@story`: keep this context bounded to one task, not the accumulated context of
 every prior task in the story.
 
+For story tasks, `@story` must also provide the repository's exact worktree path and branch from the
+plan's `## Worktrees` table. Before editing, verify that the worktree root and current branch match
+those values. Refuse if they do not, or if the requested path resolves to the main checkout. Edit
+only the approved files inside that worktree; never create or switch branches. Run the task sensor
+with that worktree as its working directory.
+
+Do not install or mutate dependencies through configured `node_modules` or `.venv` symlinks. If the
+task changes dependency manifests, report that the shared main-checkout dependencies need explicit
+synchronization before tests can run.
+
 If you find you need a file outside the given list to complete the task correctly, say so in your
 report rather than silently expanding scope.
 

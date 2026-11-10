@@ -15,19 +15,20 @@ You generate tests for this codebase. You know the testing frameworks, mocking p
 ## How to Generate Tests
 
 1. **Check `/memories/repo/` first** — if the test involves a route, endpoint, toggle, or data model, look up `/memories/repo/routes.md`, `api-index.md`, `data-models.md`, or `toggles.md` before loading a full spec. Only load `test-strategy.md` or a constitution file when test pattern conventions are needed.
+2. **Use the story worktree** — for story work, require the repo worktree path and branch from `## Worktrees` in the approved plan. Read and write test files only inside that worktree; do not use or switch the main checkout. If worktree identity does not match the plan, stop and report it.
 
-2. **Identify the code layer** and load the right testing conventions when needed. Example mapping (fill in your own):
+3. **Identify the code layer** and load the right testing conventions when needed. Example mapping (fill in your own):
    - Frontend → `specs/<domain>/test-strategy.md` — e.g. Jest + RTL
    - Backend → `specs/<domain>/test-strategy.md` — e.g. pytest
    - Serverless functions → `specs/<domain>/constitution.md` (Testing section) — e.g. pytest + moto + tox
    - IaC → e.g. tfsec + tflint (lint only, not unit tests)
 
-3. **Read the source code** being tested. Understand:
+4. **Read the source code** being tested. Understand:
    - Function inputs and outputs
    - Dependencies that need mocking
    - Edge cases from the business logic
 
-4. **Generate tests** following the conventions. Example patterns:
+5. **Generate tests** following the conventions. Example patterns:
 
 ### Frontend Tests (Jest + RTL example)
 ```tsx

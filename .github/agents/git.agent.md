@@ -51,11 +51,45 @@ your repo has them. Quick reference (fill in your own repo domains and formats):
 
 Always keep the same ticket ID across repos for a story.
 
+## Story Worktree Mode
+
+When a story plan exists, worktree mode is mandatory, including for single-repository stories. The
+plan's `## Worktrees` table is authoritative for repo paths, branch names, base refs, and worktree
+paths. Never check out a story branch in the main repository checkout.
+
+Before a story commit, push, or status operation:
+
+1. Read the ticket's active Markdown plan and require `Phase: approved` or later.
+2. Resolve the repository's worktree path and branch from `## Worktrees`.
+3. Verify `git rev-parse --show-toplevel` and `git branch --show-current` match that row. Refuse to
+   proceed from the main checkout, a different ticket's worktree, or a mismatched branch.
+4. Do not create or switch branches from the worktree; use the story's recorded branch and ticket
+   commit convention.
+
+For initialization, fetch the base ref without checking it out in the main repository, then create
+the worktree using the approved branch and base ref:
+
+```bash
+git -C codebase/{repo} fetch origin
+bash .github/skills/parallel-story/git_worktree_ops.sh add codebase/{repo} TICKET-XXXX {repo_id} {branch_name} origin/main
+```
+
+The `@story` agent must obtain explicit developer confirmation before running the helper. If the
+ticket/repository worktree path already exists or its branch is in use, do not attach another
+session or edit it concurrently. Separate tickets must use separate worktrees and ticket-prefixed
+branches.
+
 ## Commands
 
 ### Start a story branch
 
 When the developer says "start TICKET-XXXX" or provides a story number:
+
+If this is a story with an approved plan, follow **Story Worktree Mode**: fetch the base ref and
+create the worktree. Do not run `checkout main`, `pull`, or `checkout -b` in the main checkout.
+Continue with the generic branch instructions below only for work that is not part of a story plan.
+
+The commands below are only for non-story work:
 
 1. Ask which repo to work in (or detect from context)
 2. Navigate to the repo directory
@@ -75,6 +109,9 @@ Use the **same ticket ID** across all repos for the same story.
 
 When the developer says "commit" or asks to save progress:
 
+For a story, run all commands from its planned worktree and verify the ticket branch first. Never
+stage or commit story changes from the main checkout.
+
 1. Show `git status` and `git diff --stat` to confirm what's changing
 2. Confirm the commit message follows the repo-domain convention
 3. Stage and commit
@@ -93,10 +130,12 @@ backend and frontend), make separate commits:
 
 When the developer finishes one repo and needs to move to the next:
 
-1. Confirm all changes are committed in the current repo
-2. Navigate to the next repo
-3. Create the repo-specific branch name using the same ticket ID
-4. Pull latest main first
+For a story, keep the current worktree intact and move to the next repo's already-created worktree
+from the plan. Do not change branches in either main checkout or another story's worktree.
+
+For non-story work, confirm all changes are committed, then navigate to the next repo and create its
+repo-specific branch after pulling latest `main`. The following checkout commands apply only to
+non-story work:
 
 ```bash
 # Confirm clean state
@@ -113,29 +152,25 @@ git checkout -b {repo-specific-branch-name}
 
 When asked "where am I?" or "story status":
 
-1. Check all repos for branches matching `TICKET-XXXX`
-2. Show which repos have the branch, commit count, and push status
+1. Read `## Worktrees` in the plan for the repos, worktree paths, and branches.
+2. Check those exact worktrees for commit count and push status; do not infer story state by
+   searching or switching branches in the main checkouts.
 
-```bash
-for repo in codebase/*; do
-  if [ -d "$repo/.git" ]; then
-    branch=$(git -C "$repo" branch --list "TICKET-XXXX*" 2>/dev/null)
-    if [ -n "$branch" ]; then
-      echo "$repo: $branch ($(git -C "$repo" log --oneline main..$branch 2>/dev/null | wc -l) commits)"
-    fi
-  fi
-done
-```
+For a story, inspect only the exact worktrees listed in the plan. Use each row's base ref and branch
+to report commits ahead and use `git -C <worktree_path> status` to report local state.
 
 ### Push and prepare PR
 
 When the developer says "push" or "PR":
 
+For a story, verify the planned worktree path and branch, then push from that worktree. Do not switch
+to the story branch in the main checkout.
+
 1. Push the branch to origin
 2. Output the PR title and body template
 
 ```bash
-git push -u origin {repo-specific-branch-name}
+git -C codebase/worktrees/TICKET-XXXX/{repo_id} push -u origin {repo-specific-branch-name}
 ```
 
 PR title: `TICKET-XXXX | {Story title}`

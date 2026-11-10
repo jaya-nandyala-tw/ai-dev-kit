@@ -25,6 +25,12 @@ Accept: ticket number (`TICKET-XXXX`) or a direct plan file path.
 
 Look for: `plans/active/TICKET-XXXX-*.md`
 
+Read the `## Worktrees` table to map each repository's sensor commands to its exact worktree path
+and branch. Run every repository-specific sensor with that worktree as the working directory. Do
+not run story sensors from a main checkout or change branches. If a worktree is missing or its root
+or current branch does not match the plan, stop and report `BLOCKED` with the mismatched row rather
+than using another checkout.
+
 Read the `## Acceptance Criteria` table. If the section is missing or has no rows, stop immediately:
 
 > ⛔ Cannot verify — `## Acceptance Criteria` is empty in the plan. Ask `@story` to run Phase 2.5 (Task Approval Gate) first to define criteria before implementation.
@@ -50,7 +56,7 @@ Output a structured verdict immediately after running all sensors:
 ## Verification Report — TICKET-XXXX
 Date: {date}
 Plan: plans/active/TICKET-XXXX-{short-name}.md
-Branch: {current branch}
+Worktrees: {repo_id: worktree path, branch for each affected repo}
 
 | # | Criterion | Sensor | Result |
 |---|---|---|---|
@@ -76,15 +82,8 @@ If all criteria pass (no ❌ rows), proceed to Step 4.
 
 1. If any `🔍 Manual` rows exist, prompt:
    > "All automated criteria passed. Please confirm the manual criteria above, then reply `confirmed` to proceed."
-
-2. Once all criteria are cleared, invoke the `code-review` skill for inferential review of the full branch diff:
-   > "All acceptance criteria verified. Running code-review for constitution compliance and code quality before PR..."
-
-3. If `code-review` returns **no 🛑 Blockers**: story is ready for PR. Prompt:
-   > "✅ Verified and reviewed. No blockers. Ready to open PRs — use `@git` or the `pr-manager` skill."
-
-4. If `code-review` returns 🛑 **Blockers**: surface them and pause:
-   > "Acceptance criteria passed but code-review found blockers (see above). Fix before opening PRs."
+2. Once all criteria are cleared, report PASS to `@story`; the story controller will run the
+   separate Phase 6 code-review gate against each planned worktree.
 
 ### Step 5 — On FAIL
 
