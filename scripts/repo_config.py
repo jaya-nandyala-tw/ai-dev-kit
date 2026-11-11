@@ -13,6 +13,7 @@ CLI usage:
   repo_config.py core-repos      # core-tier repo names, one per line
   repo_config.py worker-repos    # worker-tier repo names, one per line
   repo_config.py all-paths       # codebase/<name> or codebase/workers/<name>, one per line
+  repo_config.py dependency-paths-for-repo <path>  # configured ui/service layer paths
 """
 import json
 import sys
@@ -63,6 +64,58 @@ def all_paths(cfg=None):
     return paths
 
 
+def dependency_paths_for_repo(path, cfg=None):
+    if not path:
+        sys.exit("✗ Usage: repo_config.py dependency-paths-for-repo <repo_path>")
+    cfg = cfg or load()
+    requested = Path(path).expanduser().resolve()
+    matches = []
+    for repo in cfg.get("repos", []):
+        if not isinstance(repo, dict) or not isinstance(repo.get("name"), str):
+            continue
+        if repo.get("tier") not in ("core", "worker"):
+            continue
+        relative_repo = (
+            Path("codebase") / "workers" / repo["name"]
+            if repo["tier"] == "worker"
+            else Path("codebase") / repo["name"]
+        )
+        if (ROOT_DIR / relative_repo).resolve() == requested:
+            matches.append(repo)
+    if len(matches) > 1:
+        sys.exit(f"✗ Multiple config/repos.json entries resolve to repository path '{requested}'.")
+    if not matches:
+        return {}
+
+    repo = matches[0]
+    paths = {}
+    for role in ("ui", "service"):
+        configured = repo.get(role)
+        if configured is None:
+            paths[role] = None
+            continue
+        if (
+            not isinstance(configured, str)
+            or not configured.strip()
+            or configured != configured.strip()
+            or configured.startswith(("/", "~"))
+            or "\\" in configured
+            or any(ord(char) < 32 or ord(char) == 127 for char in configured)
+        ):
+            sys.exit(
+                f"✗ config/repos.json repos[] entry '{repo['name']}' field "
+                f"'{role}' must be a non-empty repository-relative path or null."
+            )
+        layer = Path(configured)
+        if layer.is_absolute() or ".." in layer.parts:
+            sys.exit(
+                f"✗ config/repos.json repos[] entry '{repo['name']}' field '{role}' "
+                "must stay inside the repository."
+            )
+        paths[role] = layer.as_posix()
+    return paths
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     handlers = {
@@ -71,9 +124,12 @@ def main():
         "core-repos": lambda: print("\n".join(core_repos())),
         "worker-repos": lambda: print("\n".join(worker_repos())),
         "all-paths": lambda: print("\n".join(all_paths())),
+        "dependency-paths-for-repo": lambda: print(
+            json.dumps(dependency_paths_for_repo(sys.argv[2] if len(sys.argv) > 2 else ""))
+        ),
     }
     if cmd not in handlers:
-        sys.exit(f"Usage: repo_config.py [{'|'.join(handlers)}]")
+        sys.exit(f"Usage: repo_config.py [{'|'.join(handlers)}] [repo_path]")
     handlers[cmd]()
 
 

@@ -99,8 +99,14 @@ Save to `plans/active/TICKET-XXXX-{short-name}.md` using this structure:
 | 1 | {Condition from story AC} | UI / Service / Worker | `{pytest / npm test command}` | `{path/to/test file}` |
 
 ## Git
-- Branch: `TICKET-XXXX-{short-title}`
+- Branch: `<repo-specific ticket-prefixed branch name>`
 - Commit prefix: `TICKET-XXXX |`
+
+## Worktrees
+
+| Repo | Branch | Worktree Path | Base Ref | Status |
+|---|---|---|---|---|
+| <repo-name> | `TICKET-XXXX-{short-title}` | `codebase/worktrees/TICKET-XXXX/<repo-id>` | `origin/main` | pending |
 
 ## Implementation Order
 
@@ -285,6 +291,14 @@ skipped: no path should let code get written with zero durable artifact.
 ```
 
 ## Rules
+- Every story uses an isolated worktree, including single-repository stories. Record all repo
+  worktrees, branch names, base refs, and setup status in this plan; do not create a separate JSON
+  manifest.
+- Use one worktree per ticket and repository. Do not have concurrent sessions edit the same ticket's
+  worktree; separate tickets use separate worktrees and ticket-prefixed branches.
+- Keep source and build outputs local to each worktree. Only pre-existing `node_modules` and `.venv`
+  directories configured by repo-relative `ui`/`service` paths may be symlinked from the main
+  checkout; do not install or mutate dependencies through those links.
 - **Redact sensitive information** — never include API keys, passwords, tokens, connection strings, or PII in plan files. Use `[REDACTED]` or environment variable references
 - **Reference, don't repeat** — link to existing specs/constitutions by path rather than copying their content into the plan
 - **Keep plans actionable** — every row in the implementation table should map to a single commit; avoid vague "refactor" steps

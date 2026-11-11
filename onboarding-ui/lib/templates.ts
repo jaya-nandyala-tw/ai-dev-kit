@@ -153,16 +153,16 @@ in the same turn — do not persist a checkpoint that contradicts its plan file.
 `;
 
 export const REPOS_JSON_BASELINE = `{
-  "_comment": "GENERICIZED TEMPLATE — single source of truth for scripts/clone-repos.sh and scripts/pull-all.sh. Edit this file by hand, or run ./scripts/clone-repos.sh --select to populate it via the GitHub CLI. See ONBOARDING.md § Adding Other Repos to This Harness.",
+  "_comment": "GENERICIZED TEMPLATE — single source of truth for clone/pull and isolated story worktree dependency links. UI and service are optional repo-relative layer paths; use null when absent.",
   "github": {
     "org": "<your-github-org>",
     "protocol": "ssh"
   },
   "repos": [
-    { "name": "<service-name>", "tier": "core" },
-    { "name": "<another-service-name>", "tier": "core" },
-    { "name": "<worker-repo-1>", "tier": "worker" },
-    { "name": "<worker-repo-2>", "tier": "worker" }
+    { "name": "<service-name>", "tier": "core", "ui": null, "service": null },
+    { "name": "<another-service-name>", "tier": "core", "ui": null, "service": null },
+    { "name": "<worker-repo-1>", "tier": "worker", "ui": null, "service": null },
+    { "name": "<worker-repo-2>", "tier": "worker", "ui": null, "service": null }
   ]
 }
 `;

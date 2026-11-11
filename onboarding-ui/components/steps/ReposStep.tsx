@@ -11,12 +11,31 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { toast } from "@/lib/toast";
 import type { DiffResult } from "@/types";
 
-type Row = { name: string; visibility: string; selected: boolean; tier: "core" | "worker" };
+type Row = {
+  name: string;
+  visibility: string;
+  selected: boolean;
+  tier: "core" | "worker";
+  uiPath?: string;
+  servicePath?: string;
+};
 type ReposStepState = {
   org: string | undefined;
   rows: Row[];
   repoFilter: string;
 };
+
+function isValidLayerPath(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    !trimmed ||
+    (!trimmed.startsWith("/") &&
+      !trimmed.startsWith("~") &&
+      !trimmed.includes("\\") &&
+      !/[\u0000-\u001f\u007f]/.test(trimmed) &&
+      !trimmed.split("/").includes(".."))
+  );
+}
 
 // Three real phases (connect → select → clone), each a real git/network operation — numbered
 // so the multi-stage nature of this step reads clearly instead of as one long stack of panels.
@@ -49,7 +68,17 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
 
   useEffect(() => {
     fetchFileSchema("repos-json").then((res) => {
-      const current = res.currentValues as { github?: { org?: string }; repos?: Array<{ name: string; tier: "core" | "worker" }> };
+      const current = res.currentValues as {
+        github?: { org?: string };
+        ui?: string | null;
+        service?: string | null;
+        repos?: Array<{
+          name: string;
+          tier: "core" | "worker";
+          ui?: string | null;
+          service?: string | null;
+        }>;
+      };
       const org = current?.github?.org;
       if (org && org !== "<your-github-org>") {
         setPersistedState((prev) => ({
@@ -61,7 +90,23 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
           // section would stay hidden even though the file is already fully configured.
           rows:
             prev.rows.length === 0 && current.repos?.length
-              ? current.repos.map((r) => ({ name: r.name, visibility: "unknown", selected: true, tier: r.tier }))
+              ? current.repos.map((r) => {
+                  const repoRelativePath =
+                    r.tier === "worker" ? `codebase/workers/${r.name}` : `codebase/${r.name}`;
+                  return {
+                    name: r.name,
+                    visibility: "unknown",
+                    selected: true,
+                    tier: r.tier,
+                    uiPath: r.ui !== undefined ? r.ui ?? "" : current.ui === repoRelativePath ? "." : "",
+                    servicePath:
+                      r.service !== undefined
+                        ? r.service ?? ""
+                        : current.service === repoRelativePath
+                          ? "."
+                          : "",
+                  };
+                })
               : prev.rows,
         }));
         setWritten(true);
@@ -86,7 +131,17 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
     }
     setPersistedState((prev) => ({
       ...prev,
-      rows: res.repos!.map((r) => ({ name: r.name, visibility: r.visibility, selected: false, tier: "core" as const })),
+      rows: res.repos!.map((r) => {
+        const existing = prev.rows.find((row) => row.name === r.name);
+        return {
+          name: r.name,
+          visibility: r.visibility,
+          selected: false,
+          tier: existing?.tier ?? "core",
+          uiPath: existing?.uiPath ?? "",
+          servicePath: existing?.servicePath ?? "",
+        };
+      }),
       repoFilter: "",
     }));
     toast.success(`Loaded ${res.repos!.length} repos from ${persistedState.org}`);
@@ -138,11 +193,25 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
     const selected = persistedState.rows.filter((r) => r.selected);
     return {
       github: { org: persistedState.org, protocol: "ssh" as const },
-      repos: selected.map((r) => ({ name: r.name, tier: r.tier })),
+      repos: selected.map((r) => ({
+        name: r.name,
+        tier: r.tier,
+        ui: r.uiPath?.trim() || null,
+        service: r.servicePath?.trim() || null,
+      })),
     };
   }
 
   async function preview() {
+    const invalid = persistedState.rows.find(
+      (row) =>
+        row.selected &&
+        (!isValidLayerPath(row.uiPath ?? "") || !isValidLayerPath(row.servicePath ?? "")),
+    );
+    if (invalid) {
+      toast.error(`${invalid.name}: UI/service paths must be relative paths inside the repository.`);
+      return;
+    }
     const res = await fetchFileDiff("repos-json", buildValues());
     setDiffs(res.diffs);
   }
@@ -223,15 +292,31 @@ export function ReposStep({ onWritten }: { onWritten: () => void }) {
                 <input type="checkbox" checked={r.selected} onChange={(e) => toggle(i, { selected: e.target.checked })} />
                 <span className="mono text-sm flex-1 min-w-[10rem]">{r.name}</span>
                 {r.selected && (
-                  <SegmentedControl
-                    size="sm"
-                    value={r.tier}
-                    onChange={(tier) => toggle(i, { tier })}
-                    options={[
-                      { value: "core", label: "core" },
-                      { value: "worker", label: "reference" },
-                    ]}
-                  />
+                  <>
+                    <SegmentedControl
+                      size="sm"
+                      value={r.tier}
+                      onChange={(tier) => toggle(i, { tier })}
+                      options={[
+                        { value: "core", label: "core" },
+                        { value: "worker", label: "reference" },
+                      ]}
+                    />
+                    <input
+                      value={r.uiPath ?? ""}
+                      onChange={(e) => toggle(i, { uiPath: e.target.value })}
+                      placeholder="UI layer path (repo-relative)"
+                      aria-label={`${r.name} UI layer path`}
+                      className="field-input text-xs w-44"
+                    />
+                    <input
+                      value={r.servicePath ?? ""}
+                      onChange={(e) => toggle(i, { servicePath: e.target.value })}
+                      placeholder="Service layer path (repo-relative)"
+                      aria-label={`${r.name} service layer path`}
+                      className="field-input text-xs w-44"
+                    />
+                  </>
                 )}
               </div>
             ))}

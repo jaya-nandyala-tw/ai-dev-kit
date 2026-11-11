@@ -25,6 +25,12 @@ Run a focused self-review on current changes before completion.
 
 ### 1. Identify Review Scope
 
+**Story worktree override:** When `@story` supplies a plan with a `## Worktrees` table, review each
+repository from its exact planned worktree and compare its recorded branch against the recorded
+remote base ref (normally `origin/main`). Skip release-branch discovery and target-branch prompts.
+Do not switch branches, inspect the main checkout, or infer a worktree from a matching branch name.
+Run each repository's sensors from its worktree.
+
 **Auto-discover changed files** (preferred — ask user to confirm target branch):
 
 1. Run `git branch -r --sort=-committerdate | grep 'release/' | head -3` to find recent release branches

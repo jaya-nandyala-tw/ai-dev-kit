@@ -29,6 +29,24 @@ def die(msg):
     sys.exit(1)
 
 
+def validate_layer_path(path, repo_name, role):
+    if path is None:
+        return
+    if (
+        not isinstance(path, str)
+        or not path.strip()
+        or path != path.strip()
+        or path.startswith(("/", "~"))
+        or "\\" in path
+        or any(ord(char) < 32 or ord(char) == 127 for char in path)
+        or ".." in Path(path).parts
+    ):
+        die(
+            f"Invalid {role} layer path for '{repo_name}': use a non-empty repository-relative "
+            "path without '..' segments, or clear it with '-'."
+        )
+
+
 def check_gh():
     if subprocess.run(["which", "gh"], capture_output=True).returncode != 0:
         die("GitHub CLI ('gh') not found. Install it from https://cli.github.com/, then run "
@@ -105,23 +123,65 @@ def prompt_multiselect(repos):
     return [repos[i - 1] for i in sorted(picks) if 1 <= i <= len(repos)]
 
 
-def prompt_tier(selected):
+def prompt_tier(selected, existing_entries):
     print("\nFor each repo: core service (always cloned) or worker/lambda (cloned unless "
           "--core-only)?")
     default = input("Default for all — [c]ore or [w]orker? (Enter = w): ").strip().lower() or "w"
+    existing_by_name = {r["name"]: r for r in existing_entries}
     entries = []
     for r in selected:
-        tier_in = input(f"  {r['name']} [c/w] (Enter = {default}): ").strip().lower() or default
+        existing = existing_by_name.get(r["name"], {})
+        tier_in = input(
+            f"  {r['name']} [c/w] (Enter = {existing.get('tier', default)}): "
+        ).strip().lower() or existing.get("tier", default)
         tier = "core" if tier_in.startswith("c") else "worker"
-        entries.append({"name": r["name"], "tier": tier})
+        entry = {"name": r["name"], "tier": tier}
+        for role in ("ui", "service"):
+            current = existing.get(role)
+            default_path = current if isinstance(current, str) else ""
+            answer = input(
+                f"    {role} layer path relative to repo (Enter = "
+                f"{default_path or 'none'}, '-' = clear): "
+            ).strip()
+            entry[role] = None if answer == "-" else answer if answer else (default_path or None)
+            validate_layer_path(entry[role], r["name"], role)
+        entries.append(entry)
     return entries
 
 
 def load_config():
     if CONFIG_FILE.exists():
         with open(CONFIG_FILE) as f:
-            return json.load(f)
-    return {"github": {"org": "", "protocol": "ssh"}, "repos": []}
+            cfg = json.load(f)
+    else:
+        cfg = {"github": {"org": "", "protocol": "ssh"}, "repos": []}
+    for role in ("ui", "service"):
+        legacy_path = cfg.pop(role, None)
+        if legacy_path is None:
+            continue
+        if not isinstance(legacy_path, str) or not legacy_path.strip():
+            die(f"Legacy top-level '{role}' must be a repository path or null.")
+        resolved_legacy_path = Path(legacy_path).expanduser()
+        if not resolved_legacy_path.is_absolute():
+            resolved_legacy_path = ROOT_DIR / resolved_legacy_path
+        resolved_legacy_path = resolved_legacy_path.resolve()
+        matches = []
+        for repo in cfg.get("repos", []):
+            repo_path = (
+                ROOT_DIR / "codebase" / "workers" / repo["name"]
+                if repo.get("tier") == "worker"
+                else ROOT_DIR / "codebase" / repo["name"]
+            )
+            if repo_path.resolve() == resolved_legacy_path:
+                matches.append(repo)
+        if len(matches) != 1:
+            die(
+                f"Could not migrate legacy top-level '{role}' path '{legacy_path}' to one "
+                "configured repo. Set the role path inside the matching repos[] entry manually."
+            )
+        if role not in matches[0]:
+            matches[0][role] = "."
+    return cfg
 
 
 def save_config(cfg):
@@ -166,13 +226,13 @@ def main():
     if not repos:
         die("No repos matched.")
 
+    cfg = load_config()
     selected = prompt_multiselect(repos)
     if not selected:
         print("Nothing selected — config/repos.json left unchanged.")
         return
 
-    cfg = load_config()
-    entries = prompt_tier(selected)
+    entries = prompt_tier(selected, cfg.get("repos", []))
     cfg = merge(cfg, entries, args.org)
 
     if args.dry_run:

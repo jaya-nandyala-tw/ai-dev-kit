@@ -12,6 +12,16 @@ interrogator and never the implementer. Intake, context loading, and interrogati
 Making the actual code edit for a task is `@implement`'s job. You own: the plan-generation handoff,
 both human approval gates, sequencing the per-task loop, the test/review gates, and Close.
 
+## Worktree-Only Story Policy
+
+Every story, including single-repository stories, must use isolated worktrees. Never edit or check
+out a story branch in a main repository checkout. Record each repository's ticket-prefixed branch,
+base ref, worktree path, and setup status in a `## Worktrees` table in the approved Markdown plan;
+never create a separate JSON plan. Separate tickets get separate worktrees. Do not let multiple
+sessions edit the same ticket/repository worktree concurrently. Keep source and build outputs local to
+each worktree. Only configured main-checkout dependency directories may be symlinked into worktrees,
+and those links must not be used to mutate or install dependencies.
+
 ## Resume Check (always run first)
 
 Before anything else, check for an existing story memory file:
@@ -123,10 +133,9 @@ Reply with:
 1. Update plan `## Status` → `Phase: approved`
 2. Update session checkpoint → `Phase: approved`, `Workflow stage: approved`
 3. Confirm:
-   > "Plan approved. **Next: initialize the git branch.** Use `@git` (or say 'init branch') to
-   > create `TICKET-XXXX-{short-title}` in each affected repo. Once the branch is ready, return here and
-   > say 'start implementation'."
-4. Do NOT begin editing files autonomously — wait for the developer to confirm the branch is created.
+   > "Plan approved. **Next: initialize story worktrees.** Say `init worktrees` to prepare one for
+   > every affected repository. Once they are ready, return here and say `start implementation`."
+4. Do NOT begin editing files autonomously — wait for the developer to confirm the worktrees are ready.
 
 **On `modify / add / remove`:**
 1. Apply the change to the plan file (update both the Implementation Order table and the
@@ -144,18 +153,42 @@ Reply with:
 
 ---
 
-### Phase 3: Git Initialization
+### Phase 3: Worktree Initialization
 
-Triggered when the developer says "init branch", "create branch", or confirms the plan is approved.
+Triggered when the developer says "init worktrees", "create worktrees", or confirms the plan is approved.
 
-Use your `agent` tool to invoke `@git` as a subagent:
-> "Initialize story branches for TICKET-XXXX across affected repos: {repo list from plan}. Branch name:
-> `TICKET-XXXX-{short-title}`. Pull latest main first."
+Use the approved Markdown plan as the only source of truth. For every affected repository,
+including single-repository stories, derive the branch name from the repository's documented
+ticket-prefixed convention and use `TICKET-XXXX-{short-title}` when none is specified. Add a
+`## Worktrees` table to the plan with repo ID/path, worktree path, branch, base ref, and setup status.
+The normal worktree path is `codebase/worktrees/TICKET-XXXX/{repo_id}`.
 
-Once `@git` confirms the branch exists:
+Use `@git` to fetch the latest base ref in each repository without checking it out in the main
+checkout. Check that the target path and branch are not already in use by another session. If they
+are, stop and coordinate; do not attach to or edit an active story worktree. Show the completed
+`## Worktrees` table and ask:
+
+> "Please type `Confirm` to create the listed story worktrees."
+
+After explicit confirmation, create each worktree from the refreshed remote base:
+
+```bash
+bash .github/skills/parallel-story/git_worktree_ops.sh add <repo_path> <ticket> <repo_id> <branch_name> <base_ref>
+```
+
+Use `.github/skills/parallel-story/link_dependencies.sh <repo_path> <worktree_path>` for each
+repository. It reads optional repo-relative `ui` and `service` layer paths from that repo's
+entry in the workspace `config/repos.json` and symlinks the main checkout's `node_modules` and `.venv` into the
+corresponding worktree layer directories. Null or unmatched roles are skipped. These dependency
+directories must already exist; do not install or mutate dependencies through the symlinks. If a
+story changes dependencies, report that dependency synchronization is needed before testing. If setup
+fails, mark the plan row blocked, report partial setup, and stop; never fall back to the main
+checkout. Once all worktrees are ready, invoke `@git` to verify each worktree and branch without
+switching branches.
+
 1. Update plan `## Status` → `Phase: in-progress`, `Current repo: {first repo}`
 2. Update session checkpoint → `Phase: in-progress`, `Workflow stage: implement`
-3. Confirm: *"Branch ready. Tell me which task to start with (Task 1: {first task description})"*
+3. Confirm: *"Worktrees ready. Tell me which task to start with (Task 1: {first task description})"*
 
 ---
 
@@ -167,16 +200,18 @@ a time.
 **For the current task:**
 
 1. Read the task's row from the plan's `## Pending Approval` table — description, exact file list.
+   Resolve all paths inside the repository's worktree from `## Worktrees`, never the main checkout.
 2. Use your `agent` tool to invoke `@implement` as a subagent:
    > "Implement Task {N} for TICKET-XXXX: {task description}. Files: {file1}, {file2}. Do not touch
-   > anything outside this list."
+   > anything outside this list. Work in `codebase/worktrees/TICKET-XXXX/{repo_id}` on the branch
+   > recorded in the plan; do not create or switch branches."
 3. On `@implement`'s report:
    - If it flagged something blocked/ambiguous, surface that to the developer before continuing —
      don't let `@implement` guess and don't silently resolve it yourself.
    - Check the plan's `## Test Plan` row for this task. If a non-trivial test is needed, use your
-     `agent` tool to invoke `@test` as a subagent with the same file list.
-   - Use your `agent` tool to invoke `@git` as a subagent to commit — per-layer separation preserved,
-     ticket ID in the commit message.
+     `agent` tool to invoke `@test` as a subagent with the same file list and worktree path.
+   - Use your `agent` tool to invoke `@git` as a subagent to commit from that worktree — per-layer
+     separation preserved, ticket ID in the commit message. Keep the existing branch; do not switch.
 4. **Epic Drift check (unconditional):** if this task's commit touched the plan's `## Decisions` table
    and the plan has a non-empty `Epic:` field, use your `agent` tool to invoke the `epic-drift-check`
    skill now, before moving to the next task.
@@ -241,6 +276,10 @@ plan.
      - Surface `@verify`'s failure report verbatim and route back to Phase 4:
        > "Test gate failed. Return to implementation for task: {matching task from plan}. Re-run
        > Phase 5 after fixing."
+   - Verdict BLOCKED (a worktree is missing or does not match the plan):
+     - Keep plan `## Status` at `Phase: in-progress` and set `Blocked on: {worktree mismatch}`
+     - Surface the blocked worktree and return to Phase 3 to repair setup; do not run sensors from
+       the main checkout or another worktree
 
 ---
 
@@ -250,9 +289,10 @@ Triggered after Phase 5 passes. Invokes the `code-review` skill for constitution
 quality.
 
 1. Update plan `## Status` → `Phase: review`; update session checkpoint → `Workflow stage: review`
-2. Invoke the `code-review` skill:
-   > "Review all changes on branch `TICKET-XXXX-{short-title}` against target `main`. Check every
-   > layer that changed (UI, service, infra, etc.) as applicable."
+2. Invoke the `code-review` skill for every affected repository:
+   > "Review changes in `codebase/worktrees/TICKET-XXXX/{repo_id}` on the branch recorded in
+   > `## Worktrees` against its recorded remote base ref. Do not switch branches or use the main
+   > checkout. Check every changed layer as applicable."
 3. Collect the findings report:
    - No 🛑 Blockers:
      - Update plan `## Status` → `Phase: closing`
@@ -280,7 +320,8 @@ Update plan `## Status` → `Phase: closing`; update session checkpoint → `Wor
 Phase 6.
 
 Use your `agent` tool to invoke `@git` as a subagent:
-> "Commit any remaining staged changes on branch `TICKET-XXXX-{short-title}` and push to origin."
+> "Commit any remaining staged changes and push each branch recorded in `## Worktrees` from its
+> worktree. Do not switch branches or use a main checkout."
 
 Then confirm with the developer before proceeding.
 
@@ -320,7 +361,22 @@ order, e.g. service → UI → infra).
 
 Update session checkpoint → `Phase: {outcome}`, `Workflow stage: closing`.
 
-**Step 4 — Auto-draft Lessons.**
+**Step 4 — Worktree cleanup.**
+
+After confirming the story outcome, ask:
+> "The story is complete. Type **'Clean'** to remove its worktrees; story branches will be preserved."
+
+Only after explicit `Clean` confirmation, remove each clean worktree listed in the plan:
+
+```bash
+bash .github/skills/parallel-story/git_worktree_ops.sh remove <repo_path> <ticket> <repo_id> <branch_name>
+```
+
+The helper must refuse worktrees with uncommitted changes and must preserve branches. If cleanup
+fails, report the affected repo and leave its worktree and branch intact. If cleanup is not confirmed,
+preserve all worktrees.
+
+**Step 5 — Auto-draft Lessons.**
 
 Instead of an open-ended "any lessons?" prompt — which tends to get skipped in practice — draft the
 `## Lessons` section yourself from data already captured during the story:
@@ -352,7 +408,7 @@ Instead of an open-ended "any lessons?" prompt — which tends to get skipped in
    explicitly: "Confirmed as-is, or would you like to edit this before I archive?"
 5. Append the confirmed/edited section to the plan file before archiving.
 
-**Step 5 — Spec drift check.**
+**Step 6 — Spec drift check.**
 
 Check whether any task in the plan touched a file under `specs/`. If so, use your `agent` tool to
 invoke `@doc-sync` as a subagent:
@@ -362,14 +418,14 @@ invoke `@doc-sync` as a subagent:
 `@doc-sync`'s own Phase 1 (Scope) and Phase 5 (ask before writing) are unchanged by this
 auto-trigger — it still asks before it writes anything. If no spec file was touched, skip this step.
 
-**Step 6 — Archive.** Move the plan file:
+**Step 7 — Archive.** Move the plan file:
 ```
 plans/active/TICKET-XXXX-{short-name}.md  →  plans/completed/TICKET-XXXX-{short-name}.md
 ```
 
 Use a shell `mv` command — do not copy-delete.
 
-**Step 7 — Clear session checkpoint.**
+**Step 8 — Clear session checkpoint.**
 **Replace the entire contents** of `/memories/session/story-{TICKET-XXXX}.md` with only the two lines
 below — delete every prior line (decisions, status history, steering log), do not append or prepend:
 ```
@@ -377,7 +433,7 @@ Closed: {date} → plans/completed/TICKET-XXXX-{short-name}.md
 Workflow stage: done
 ```
 
-**Step 8 — Surface rule candidates.**
+**Step 9 — Surface rule candidates.**
 If Step 4 captured any rule candidates, prompt:
 > "This looks like it could become a harness rule. Want me to open a PR against `.github/` to add it
 > to the relevant constitution or instruction file?"

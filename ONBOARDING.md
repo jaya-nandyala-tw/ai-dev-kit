@@ -310,12 +310,19 @@ You can also pull from a GitHub Project (v2) board instead of a whole org:
 {
   "github": { "org": "your-github-org", "protocol": "ssh" },
   "repos": [
-    { "name": "billing-service", "tier": "core" },
-    { "name": "notifications-worker", "tier": "worker" }
+    { "name": "customer-app", "tier": "core", "ui": "web", "service": null },
+    { "name": "billing-service", "tier": "core", "ui": null, "service": "service" },
+    { "name": "notifications-worker", "tier": "worker", "ui": null, "service": null }
   ]
 }
 ```
 
+- Each repo entry can define `ui` and/or `service` as paths relative to that repository (for example
+  `"web"` or `"service"`); set either to `null` when that layer is absent. The setup helper links the
+  main checkout's `<ui-path>/node_modules` and `<service-path>/.venv` into the same relative
+  locations in the story worktree. Source code remains isolated in each worktree. The dependency
+  directories must already exist in the main checkout and must not be changed through the worktree
+  symlinks; dependency-manifest changes require explicit dependency synchronization before tests.
 - `tier: "core"` → always cloned, into `codebase/<name>`.
 - `tier: "worker"` → cloned into `codebase/workers/<name>` unless `--core-only` is passed.
 
@@ -340,6 +347,7 @@ folder on disk is left alone (delete `codebase/<name>` yourself if you want it g
 |---|---|---|
 | What gets cloned | `clone-repos.sh` | Every `tier:"core"` repo, plus `tier:"worker"` repos unless `--core-only` |
 | What gets kept up to date | `pull-all.sh` | Every repo listed, at its `codebase/<name>` or `codebase/workers/<name>` path |
+| Story dependencies | `.github/skills/parallel-story/link_dependencies.sh` | Links pre-existing `node_modules` and `.venv` directories from configured repo-relative UI/service layer paths into each worktree; null roles are skipped |
 
 ### Step 5: Open the Workspace
 
